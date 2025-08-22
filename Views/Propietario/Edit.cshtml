@@ -1,0 +1,24 @@
+@model inmobiliaria_mvc.Models.Propietario
+
+@{
+    ViewData["Title"] = "Editar Propietario";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <partial name="_FormPropietario" model="Model" />
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Volver a Lista</a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,22 +1,112 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
 }
 
 body {
-  margin-bottom: 60px;
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #fff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  transition: width 0.3s;
+}
+
+.sidebar .logo {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #27ae60;
+  margin-bottom: 40px;
+}
+
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  text-decoration: none;
+  color: #333;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.sidebar nav a:hover {
+  background-color: #f1f1f1;
+}
+
+.sidebar nav a i {
+  margin-right: 10px;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  padding: 3rem 8rem;
+}
+
+.topnav {
+  height: 60px;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.topnav .user-info {
+  display: flex;
+  align-items: center;
+}
+
+.topnav .user-info img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.topnav .user-info .email {
+  margin-right: 15px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.topnav .user-info .role {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+  }
+
+  .sidebar nav a span {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topnav {
+    justify-content: center;
+  }
+
+  .topnav .user-info .email,
+  .topnav .user-info .role {
+    display: none;
+  }
 }
