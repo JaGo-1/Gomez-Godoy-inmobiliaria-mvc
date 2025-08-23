@@ -18,7 +18,7 @@ CREATE TABLE propietario (
 
 -- Tabla Inquilino
 CREATE TABLE inquilino (
-    id SERIAL PRIMARY KEY,
+    idInquilino SERIAL PRIMARY KEY,
     dni VARCHAR(20) NOT NULL,
     nombre VARCHAR(50),
     apellido VARCHAR(50),
