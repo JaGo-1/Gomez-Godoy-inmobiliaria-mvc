@@ -130,7 +130,7 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        public ActionResult Delete(int id)
+        public ActionResult Delete1(int id)
         {
             try
             {
@@ -147,6 +147,22 @@ namespace inmobiliaria_mvc.Controllers
                 throw;
             }
         }
+        
+        public ActionResult Delete(int id)
+        {
+            try
+            {
+                repositorio.Baja(id);
+                TempData["Mensaje"] = "Eliminación realizada correctamente.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Hubo un error al eliminar el inquilino.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

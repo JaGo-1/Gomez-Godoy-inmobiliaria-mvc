@@ -7,7 +7,7 @@
 -- Tabla Propietario
 CREATE TABLE propietario (
     id SERIAL PRIMARY KEY,
-    dni VARCHAR(20) NOT NULL,
+    dni INT NOT NULL,
     nombre VARCHAR(50),
     apellido VARCHAR(50),
     telefono VARCHAR(20),
