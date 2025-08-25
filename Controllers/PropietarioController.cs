@@ -1,21 +1,21 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
-using inmobiliaria_mvc.ViewModels;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace inmobiliaria_mvc.Controllers
 {
     public class PropietarioController : Controller
     {
+        private readonly ILogger<PropietarioController> _logger;
+
         private readonly IRepositoryPropietario _repo;
         private readonly IConfiguration _config;
 
-        public PropietarioController(IRepositoryPropietario repo, IConfiguration config)
+        public PropietarioController(ILogger<PropietarioController> logger, IRepositoryPropietario repo, IConfiguration config)
         {
-            this._repo = repo;
-            this._config = config;
+            _logger = logger;
+            _repo = repo;
+            _config = config;
         }
 
         // GET: Propietario
@@ -50,6 +50,7 @@ namespace inmobiliaria_mvc.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al crear propietario: Create()");
                 throw;
             }
         }
@@ -125,64 +126,6 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-
-        //POST: Propietarios/Edit/:id
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult ChangePass(int id, ChangePassViewModel cpvm)
-        {
-            Propietario propietario = null;
-            try
-            {
-                propietario = _repo.ObtenerPorId(id);
-                var pass = Convert.ToBase64String(KeyDerivation.Pbkdf2
-                    (
-                        password: cpvm.PrevPass ?? "",
-                        salt: System.Text.Encoding.ASCII.GetBytes(_config["Salt"]),
-                        prf: KeyDerivationPrf.HMACSHA1,
-                        iterationCount: 10000,
-                        numBytesRequested: 256 / 8
-                    ));
-
-                if (propietario.Clave != pass)
-                {
-                    TempData["Error"] = "Clave incorrecta";
-                    return RedirectToAction("Edit", new { id = id });
-                }
-
-                if (ModelState.IsValid)
-                {
-                    propietario.Clave = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                        password: cpvm.NewPass,
-                        salt: System.Text.Encoding.ASCII.GetBytes(_config["Salt"]),
-                        prf: KeyDerivationPrf.HMACSHA1,
-                        iterationCount: 10000,
-                        numBytesRequested: 256 / 8
-                    ));
-                    _repo.Modificacion(propietario);
-                    TempData["Message"] = "Contraseña actualizada";
-                    return RedirectToAction(nameof(Index));
-                }
-                else
-                {
-                    foreach (ModelStateEntry modelState in ViewData.ModelState.Values)
-                    {
-                        foreach (ModelError error in modelState.Errors)
-                        {
-                            TempData["Error"] += error.ErrorMessage + "\n";
-                        }
-                    }
-                    return RedirectToAction("Edit", new { id = id });
-                }
-            }
-            catch (Exception e)
-            {
-                TempData["Error"] = e.Message;
-                TempData["StackTrace"] = e.StackTrace;
-                return RedirectToAction("Edit", new { id = id });
-            }
-        }
-
         //GET: Propietario/Delete/:id
         public ActionResult Delete(int id)
         {
@@ -212,6 +155,7 @@ namespace inmobiliaria_mvc.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Error al eliminar propietario: Delete()");
                 throw;
             }
         }
