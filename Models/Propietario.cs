@@ -17,6 +17,8 @@ namespace inmobiliaria_mvc.Models
         [Required, MinLength(6)]
         public required string Clave { get; set; }
 
+        public string NombreCompleto => $"{Nombre} {Apellido}";
+
         public override string ToString()
         {
             return $"{Nombre} {Apellido}";
