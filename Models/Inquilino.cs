@@ -16,6 +16,9 @@ public class Inquilino
     [StringLength(50)]
     public string Apellido { get; set; }
 
+    public string NombreCompleto => $"{Nombre} {Apellido}";
+
+
     [Required]
     public string Dni { get; set; }
 
@@ -24,7 +27,7 @@ public class Inquilino
 
     [Required, EmailAddress]
     public string Email { get; set; }
-    
-    public bool Estado { get; set; } 
+
+    public bool Estado { get; set; }
 }
 

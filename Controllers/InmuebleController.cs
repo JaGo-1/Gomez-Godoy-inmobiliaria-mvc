@@ -15,17 +15,17 @@ public class InmuebleController : Controller
         this.repositorio = repositorio;
         this.repoPropietario = repoPropietario;
     }
-    
+
     public ActionResult Index()
     {
         var lista = repositorio.ObtenerTodos();
-        if(TempData.ContainsKey("Id"))
+        if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
-        if(TempData.ContainsKey("Mensaje"))
+        if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
         return View(lista);
     }
-    
+
     public ActionResult Create()
     {
         ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto");
@@ -55,7 +55,7 @@ public class InmuebleController : Controller
             return View(inmueble);
         }
     }
-    
+
     public ActionResult Edit(int id)
     {
         var inmueble = repositorio.ObtenerPorId(id);
@@ -91,7 +91,7 @@ public class InmuebleController : Controller
             return View(inmueble);
         }
     }
-    
+
     public ActionResult Delete(int id)
     {
         try

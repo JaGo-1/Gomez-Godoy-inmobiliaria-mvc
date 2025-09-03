@@ -7,6 +7,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<IRepositoryInquilino, RepositoryInquilino>();
 builder.Services.AddTransient<IRepositoryPropietario, RepositoryPropietario>();
 builder.Services.AddTransient<IRepositoryInmueble, RepositoryInmueble>();
+builder.Services.AddTransient<IRepositoryContrato, RepositoryContrato>();
+
 
 var app = builder.Build();
 
