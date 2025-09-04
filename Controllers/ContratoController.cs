@@ -54,6 +54,10 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
+                if (contrato.Fecha_inicio>= contrato.Fecha_fin)
+                {
+                    ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
+                }
                 if (ModelState.IsValid)
                 {
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
@@ -109,10 +113,14 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
+                if (contrato.Fecha_inicio>= contrato.Fecha_fin)
+                {
+                    ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
+                }
                 if (ModelState.IsValid)
                 {
                     contrato.Id = id;
-                    if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
+                    if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin, id))
                     {
                         _repo.Modificacion(contrato);
                         TempData["Mensaje"] = "Contrato modificado correctamente.";
