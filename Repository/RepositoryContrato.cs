@@ -151,14 +151,26 @@ namespace inmobiliaria_mvc.Repository
         }
 
         //Verificar que no se solapen fechas
-        public bool ExisteSolapado(int inmuebleId, DateTime fechaInicio, DateTime fechaFin)
+        public bool ExisteSolapado(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null)
         {
             using var conn = new NpgsqlConnection(connectionString);
-            string sql = @"SELECT COUNT(*) FROM contrato WHERE id_inmueble = @id_inmueble AND (fecha_inicio, fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin);";
+
+            string sql = @"SELECT COUNT(*) FROM contrato WHERE id_inmueble = @id_inmueble AND estado = true AND (fecha_inicio, fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin)";
+
+            if (contratoId.HasValue)
+            {
+                sql += " AND id <> @id";
+            }
+
             using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id_inmueble", inmuebleId);
             cmd.Parameters.AddWithValue("@fecha_inicio", fechaInicio);
             cmd.Parameters.AddWithValue("@fecha_fin", fechaFin);
+
+            if (contratoId.HasValue)
+            {
+                cmd.Parameters.AddWithValue("@id", contratoId.Value);
+            }
 
             conn.Open();
             int count = Convert.ToInt32(cmd.ExecuteScalar());

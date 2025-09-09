@@ -111,9 +111,12 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         using (var conn = new NpgsqlConnection(connectionString))
         {
             string sql = @"
-                SELECT Id, Direccion, Precio, Ambientes, Estado, Latitud, Longitud, Uso, Tipo, PropietarioId 
-                FROM Inmueble 
-                WHERE Estado = true;";
+            SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado,
+                   i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId,
+                   p.Nombre, p.Apellido
+            FROM Inmueble i
+            INNER JOIN Propietario p ON i.PropietarioId = p.Id
+            WHERE i.Estado = true;";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
             {
@@ -133,7 +136,12 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             Longitud = reader.GetDouble(6),
                             Uso = Enum.Parse<UsoInmueble>(reader.GetString(7)),
                             Tipo = Enum.Parse<TipoInmueble>(reader.GetString(8)),
-                            PropietarioId = reader.GetInt32(9)
+                            PropietarioId = reader.GetInt32(9),
+                            Propietario = new Propietario
+                            {
+                                Nombre = reader.GetString(10),
+                                Apellido = reader.GetString(11)
+                            }
                         });
                     }
                 }
