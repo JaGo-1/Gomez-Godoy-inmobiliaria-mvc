@@ -1,4 +1,5 @@
 
+using System.Data.SqlTypes;
 using inmobiliaria_mvc.Models;
 using Npgsql;
 using Xunit.Sdk;
@@ -176,6 +177,45 @@ namespace inmobiliaria_mvc.Repository
             return count > 0;
         }
 
+        public List<Contrato> ObtenerContratosPorInmueble(int idInmueble)
+        {
+            try
+            {
+                var res = new List<Contrato>();
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    string sql = @"SELECT id_inquilino, fecha_inicio, fecha_fin, monto, estado FROM contrato WHERE id_inmueble = @idInmueble;";
+
+                    using (var cmd = new NpgsqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idInmueble", idInmueble);
+                        conn.Open();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                res.Add(new Contrato
+                                {
+                                    IdInquilino = reader.GetInt32(0),
+                                    Inquilino = new RepositoryInquilino(configuration).ObtenerPorId(reader.GetInt32(0)),
+                                    Fecha_inicio = reader.GetDateTime(1),
+                                    Fecha_fin = reader.GetDateTime(2),
+                                    Monto = reader.GetInt32(3),
+                                    Estado = reader.GetBoolean(4)
+                                });
+                            }
+                        }
+                        conn.Close();
+                    }
+                }
+                return res;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error en ObtenerContratosPorInmueble: " + ex.Message);
+                throw;
+            }
+        }
     }
 }
 

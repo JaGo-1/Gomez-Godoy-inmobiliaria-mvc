@@ -1,5 +1,6 @@
 ﻿using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -8,11 +9,13 @@ namespace inmobiliaria_mvc.Controllers;
 public class InmuebleController : Controller
 {
     private readonly IRepositoryInmueble repositorio;
+    private readonly IRepositoryContrato repoContrato;
     private readonly IRepositoryPropietario repoPropietario;
 
-    public InmuebleController(IRepositoryInmueble repositorio, IRepositoryPropietario repoPropietario)
+    public InmuebleController(IRepositoryInmueble repositorio, IRepositoryContrato repoContrato, IRepositoryPropietario repoPropietario)
     {
         this.repositorio = repositorio;
+        this.repoContrato = repoContrato;
         this.repoPropietario = repoPropietario;
     }
 
@@ -53,6 +56,28 @@ public class InmuebleController : Controller
             TempData["Error"] = "Hubo un error al crear el inmueble.";
             ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto");
             return View(inmueble);
+        }
+    }
+
+    public ActionResult Details(int id)
+    {
+        try
+        {
+            var inmueble = repositorio.ObtenerPorId(id);
+            var contratos = repoContrato.ObtenerContratosPorInmueble(id);
+
+            var model = new InmuebleDetalleVM
+            {
+                Inmueble = inmueble,
+                Contratos = contratos
+            };
+
+            return View(model);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = "Ocurrió un error al obtener los detalles del inmueble.";
+            return RedirectToAction(nameof(Index));
         }
     }
 

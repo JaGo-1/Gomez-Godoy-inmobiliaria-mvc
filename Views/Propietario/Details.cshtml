@@ -1,0 +1,75 @@
+@model inmobiliaria_mvc.ViewModels.PropietarioDetalleVM
+
+@{
+    ViewData["Title"] = "Detalle del Propietario";
+}
+
+<div class="container-fluid">
+    <div class="row">
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles del Propietario</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nombre:</strong> @Model.Propietario?.Nombre</p>
+                    <p><strong>Apellido:</strong> @Model.Propietario?.Apellido</p>
+                    <p><strong>DNI:</strong> @Model.Propietario?.Dni</p>
+                    <p><strong>Teléfono:</strong> @Model.Propietario?.Telefono</p>
+                    <p><strong>Email:</strong> @Model.Propietario?.Email</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Inmuebles Asociados</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Inmuebles != null && Model.Inmuebles.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Dirección</th>
+                                        <th>Tipo</th>
+                                        <th>Uso</th>
+                                        <th>Ambientes</th>
+                                        <th>Precio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var inmueble in Model.Inmuebles)
+                                    {
+                                        <tr>
+                                            <td>@inmueble.Direccion</td>
+                                            <td>@inmueble.Tipo</td>
+                                            <td>@inmueble.Uso</td>
+                                            <td>@inmueble.Ambientes</td>
+                                            <td>@inmueble.Precio</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            Este propietario no tiene inmuebles asociados.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>

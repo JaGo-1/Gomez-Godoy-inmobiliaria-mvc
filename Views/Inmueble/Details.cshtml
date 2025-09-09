@@ -1,0 +1,76 @@
+@model inmobiliaria_mvc.ViewModels.InmuebleDetalleVM
+
+@{
+    ViewData["Title"] = "Detalle del Inmueble";
+}
+
+<div class="container-fluid">
+    <div class="row">
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles del Inmueble</h5>
+                </div>
+
+                <div class="card-body">
+                    <h5>@Model.Inmueble.Direccion</h5>
+                    <p><strong>Precio:</strong> @Model.Inmueble.Precio.ToString("C")</p>
+                    <p><strong>Ambientes:</strong> @Model.Inmueble.Ambientes</p>
+                    <p><strong>Uso:</strong> @Model.Inmueble.Uso</p>
+                    <p><strong>Tipo:</strong> @Model.Inmueble.Tipo</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Contratos activos</h5>
+                </div>
+
+                <div class="card-body">
+                    @if (Model.Contratos != null && Model.Contratos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Inquilino</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var contrato in Model.Contratos)
+                                    {
+                                        <tr>
+                                            <td>@contrato.Inquilino?.NombreCompleto</td>
+                                            <td>@contrato.Fecha_inicio.ToShortDateString()</td>
+                                            <td>@contrato.Fecha_fin.ToShortDateString()</td>
+                                            <td>@contrato.Monto.ToString("C")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No hay contratos activos para este inmueble.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
