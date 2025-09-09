@@ -184,7 +184,6 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
 
     public List<Inmueble> ObtenerPorPropietario(int propietarioId)
     {
-
         try
         {
             var res = new List<Inmueble>();
