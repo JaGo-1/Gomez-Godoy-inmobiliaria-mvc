@@ -1,5 +1,6 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace inmobiliaria_mvc.Controllers
@@ -9,12 +10,14 @@ namespace inmobiliaria_mvc.Controllers
         private readonly ILogger<PropietarioController> _logger;
 
         private readonly IRepositoryPropietario _repo;
+        private readonly IRepositoryInmueble _repoInmueble;
         private readonly IConfiguration _config;
 
-        public PropietarioController(ILogger<PropietarioController> logger, IRepositoryPropietario repo, IConfiguration config)
+        public PropietarioController(ILogger<PropietarioController> logger, IRepositoryPropietario repo, IRepositoryInmueble repoInmueble, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
+            _repoInmueble = repoInmueble;
             _config = config;
         }
 
@@ -78,6 +81,29 @@ namespace inmobiliaria_mvc.Controllers
             {
                 TempData["Error"] = ex.Message;
                 return View(propietario);
+            }
+        }
+
+        // GET: Propietario/Details/:id
+        public ActionResult Details(int id)
+        {
+            try
+            {
+                var propietario = _repo.ObtenerPorId(id);
+                var inmueles = _repoInmueble.ObtenerPorPropietario(id);
+
+                var model = new PropietarioDetalleVM
+                {
+                    Propietario = propietario,
+                    Inmuebles = inmueles
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Ocurrió un error al obtener los detalles del propietario.";
+                return RedirectToAction(nameof(Index));
             }
         }
 

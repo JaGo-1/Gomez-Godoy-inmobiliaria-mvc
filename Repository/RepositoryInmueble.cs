@@ -181,4 +181,47 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         }
         return inmueble!;
     }
+
+    public List<Inmueble> ObtenerPorPropietario(int propietarioId)
+    {
+
+        try
+        {
+            var res = new List<Inmueble>();
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                string sql = @"SELECT direccion, tipo, uso, ambientes, precio FROM inmueble WHERE propietarioid = @propietarioId AND estado = true;";
+
+                using (var cmd = new NpgsqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@propietarioId", propietarioId);
+                    conn.Open();
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            res.Add(new Inmueble
+                            {
+                                Direccion = reader.GetString(0),
+                                Tipo = Enum.Parse<TipoInmueble>(reader.GetString(1)),
+                                Uso = Enum.Parse<UsoInmueble>(reader.GetString(2)),
+                                Ambientes = reader.GetInt32(3),
+                                Precio = reader.GetDecimal(4)
+                            });
+                        }
+                    }
+                    conn.Close();
+                }
+            }
+            return res;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error en ObtenerPorPropietario: " + ex.Message);
+            throw;
+        }
+
+    }
 }
+
