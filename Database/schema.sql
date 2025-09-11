@@ -44,3 +44,20 @@ CREATE TABLE Inmueble (
     ON DELETE CASCADE
 );
 
+-- Tabla Contrato
+CREATE TABLE Contrato (
+    Id SERIAL PRIMARY KEY,
+    IdInmueble INTEGER NOT NULL,
+    IdInquilino INTEGER NOT NULL,
+    Monto INTEGER NOT NULL,
+    Fecha_inicio DATE NOT NULL,
+    Fecha_fin DATE NOT NULL,
+    Estado BOOLEAN NOT NULL,
+    CONSTRAINT fk_contrato_inmueble FOREIGN KEY (IdInmueble)
+    REFERENCES Inmueble(Id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_contrato_inquilino FOREIGN KEY (IdInquilino)
+    REFERENCES Inquilino(idInquilino)
+    ON DELETE CASCADE
+);
+

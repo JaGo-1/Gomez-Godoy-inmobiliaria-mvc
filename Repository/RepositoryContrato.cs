@@ -184,7 +184,7 @@ namespace inmobiliaria_mvc.Repository
                 var res = new List<Contrato>();
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
-                    string sql = @"SELECT id_inquilino, fecha_inicio, fecha_fin, monto, estado FROM contrato WHERE id_inmueble = @idInmueble;";
+                    string sql = @"SELECT id_inquilino, fecha_inicio, fecha_fin, monto, estado FROM contrato WHERE id_inmueble = @idInmueble AND estado = TRUE;";
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
                     {
