@@ -22,9 +22,10 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         // GET: Propietario
-        public ActionResult Index()
+        public ActionResult Index(int page = 1, int pageSize = 5)
         {
-            var propietarios = _repo.ObtenerTodos();
+            //var propietarios = _repo.ObtenerTodos();
+            var propietarios = _repo.Paginar(page, pageSize);
             if (TempData.ContainsKey("Mensaje")) ViewBag.Mensaje = TempData["Mensaje"];
             return View(propietarios);
 

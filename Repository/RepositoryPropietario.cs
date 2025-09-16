@@ -1,4 +1,5 @@
 using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 
 namespace inmobiliaria_mvc.Repository
@@ -143,5 +144,60 @@ namespace inmobiliaria_mvc.Repository
             }
             return res;
         }
+
+        public PagedResult<Propietario> Paginar(int pagina = 1, int tamPagina = 10)
+        {
+            var res = new List<Propietario>();
+            int totalItems = 0;
+
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                conn.Open();
+                string countSql = "SELECT COUNT(*) FROM propietario WHERE estado = true";
+                using (var countCmd = new NpgsqlCommand(countSql, conn))
+                {
+                    totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+                }
+
+                string sql = @"SELECT id, dni, nombre, apellido, telefono, email
+                       FROM propietario 
+                       WHERE estado = true 
+                       ORDER BY id 
+                       LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+
+                using (var cmd = new NpgsqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("pagina", pagina);
+                    cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            res.Add(new Propietario
+                            {
+                                Id = reader.GetInt32(0),
+                                Dni = reader.GetInt32(1),
+                                Nombre = reader.GetString(2),
+                                Apellido = reader.GetString(3),
+                                Telefono = reader.GetString(4),
+                                Email = reader.GetString(5)
+                            });
+                        }
+                    }
+                }
+
+                conn.Close();
+            }
+
+            return new PagedResult<Propietario>
+            {
+                Items = res,
+                TotalItems = totalItems,
+                PageNumber = pagina,
+                PageSize = tamPagina
+            };
+        }
+
     }
 }

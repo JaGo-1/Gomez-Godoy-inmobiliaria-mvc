@@ -1,6 +1,7 @@
 
 using System.Data.SqlTypes;
 using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 using Xunit.Sdk;
 
@@ -215,6 +216,64 @@ namespace inmobiliaria_mvc.Repository
                 Console.WriteLine("Error en ObtenerContratosPorInmueble: " + ex.Message);
                 throw;
             }
+        }
+
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina)
+        {
+            var res = new List<Contrato>();
+            int totalItems = 0;
+
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                conn.Open();
+                string countSql = "SELECT COUNT (*) FROM contrato WHERE estado = true";
+                using (var countCmd = new NpgsqlCommand(countSql, conn))
+                {
+                    totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+                }
+
+                string sql = @"
+                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto
+                FROM contrato c
+                INNER JOIN inmueble i ON c.id_inmueble = i.id
+                INNER JOIN inquilino inq ON c.id_inquilino = inq.idInquilino
+                WHERE c.estado = true;
+                ";
+
+                using (var cmd = new NpgsqlCommand(sql, conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            res.Add(new Contrato
+                            {
+                                Id = reader.GetInt32(0),
+                                Inmueble = new Inmueble
+                                {
+                                    Direccion = reader.GetString(1)
+                                },
+                                Inquilino = new Inquilino
+                                {
+                                    Nombre = reader.GetString(2),
+                                    Apellido = reader.GetString(3)
+                                },
+                                Fecha_inicio = reader.GetDateTime(4),
+                                Fecha_fin = reader.GetDateTime(5),
+                                Monto = reader.GetInt32(6)
+                            });
+                        }
+                    }
+                }
+                conn.Close();
+            }
+            return new PagedResult<Contrato>
+            {
+                Items = res,
+                TotalItems = totalItems,
+                PageNumber = tamPagina,
+                PageSize = tamPagina
+            };
         }
     }
 }

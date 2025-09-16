@@ -1,4 +1,5 @@
 ﻿using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 
 namespace inmobiliaria_mvc.Repository
@@ -146,6 +147,55 @@ namespace inmobiliaria_mvc.Repository
                 }
             }
             return inquilino;
+        }
+
+        public PagedResult<Inquilino> Paginar(int pagina, int tamPagina)
+        {
+            var res = new List<Inquilino>();
+            int totalItems = 0;
+
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                conn.Open();
+                string countSql = "SELECT COUNT (*) FROM inquilino WHERE estado = true";
+                using (var countCmd = new NpgsqlCommand(countSql, conn))
+                {
+                    totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+                }
+
+                string sql = "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE Estado = true ORDER BY IdInquilino LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+
+                using (var cmd = new NpgsqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("pagina", pagina);
+                    cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            res.Add(new Inquilino
+                            {
+                                IdInquilino = (int)reader.GetInt64(0),
+                                Dni = reader.GetString(1),
+                                Nombre = reader.GetString(2),
+                                Apellido = reader.GetString(3),
+                                Telefono = reader.GetString(4),
+                                Email = reader.GetString(5)
+                            });
+                        }
+                    }
+                }
+                conn.Close();
+            }
+
+            return new PagedResult<Inquilino>
+            {
+                Items = res,
+                TotalItems = totalItems,
+                PageNumber = pagina,
+                PageSize = tamPagina
+            };
         }
     }
 }

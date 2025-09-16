@@ -1,5 +1,7 @@
 ﻿using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.ViewModels;
 using Npgsql;
+using Npgsql.Internal;
 
 namespace inmobiliaria_mvc.Repository;
 
@@ -229,6 +231,70 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             throw;
         }
 
+    }
+
+    public PagedResult<Inmueble> Paginar(int pagina, int tamPagina)
+    {
+        var res = new List<Inmueble>();
+        int totalItems = 0;
+
+        using (var conn = new NpgsqlConnection(connectionString))
+        {
+            conn.Open();
+            string countSql = "SELECT COUNT (*) FROM inmueble WHERE estado = true";
+            using (var countCmd = new NpgsqlCommand(countSql, conn))
+            {
+                totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+            }
+
+            string sql = @"
+            SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, p.Nombre, p.Apellido 
+            FROM inmueble i
+            INNER JOIN Propietario p ON i.PropietarioId = p.Id
+            WHERE i.Estado = true
+            ORDER BY i.Id
+            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
+            ";
+
+            using (var cmd = new NpgsqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("pagina", pagina);
+                cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res.Add(new Inmueble
+                        {
+                            Id = reader.GetInt32(0),
+                            Direccion = reader.GetString(1),
+                            Precio = reader.GetInt32(2),
+                            Ambientes = reader.GetInt32(3),
+                            Estado = reader.GetBoolean(4),
+                            Latitud = reader.GetDouble(5),
+                            Longitud = reader.GetDouble(6),
+                            Uso = Enum.Parse<UsoInmueble>(reader.GetString(7)),
+                            Tipo = Enum.Parse<TipoInmueble>(reader.GetString(8)),
+                            PropietarioId = reader.GetInt32(9),
+                            Propietario = new Propietario
+                            {
+                                Nombre = reader.GetString(10),
+                                Apellido = reader.GetString(11)
+                            }
+                        });
+                    }
+                }
+            }
+            conn.Close();
+        }
+        return new PagedResult<Inmueble>
+        {
+            Items = res,
+            TotalItems = totalItems,
+            PageNumber = pagina,
+            PageSize = tamPagina
+        };
     }
 }
 
