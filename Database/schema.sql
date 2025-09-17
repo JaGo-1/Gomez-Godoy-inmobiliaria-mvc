@@ -45,14 +45,16 @@ CREATE TABLE Inmueble (
 );
 
 -- Tabla Contrato
-CREATE TABLE Contrato (
+CREATE TABLE IF NOT EXISTS Contrato (
     Id SERIAL PRIMARY KEY,
     IdInmueble INTEGER NOT NULL,
     IdInquilino INTEGER NOT NULL,
-    Monto INTEGER NOT NULL,
+    Monto DECIMAL(18,2) NOT NULL,
     Fecha_inicio DATE NOT NULL,
     Fecha_fin DATE NOT NULL,
     Estado BOOLEAN NOT NULL,
+    Fecha_terminacion_anticipada DATE,
+    Multa_calculada DECIMAL(18,2),
     CONSTRAINT fk_contrato_inmueble FOREIGN KEY (IdInmueble)
     REFERENCES Inmueble(Id)
     ON DELETE CASCADE,
@@ -61,3 +63,17 @@ CREATE TABLE Contrato (
     ON DELETE CASCADE
 );
 
+-- Tabla Pago
+CREATE TABLE IF NOT EXISTS Pago (
+    IdPago SERIAL PRIMARY KEY,
+    ContratoId INTEGER NOT NULL,
+    NumeroPago INTEGER NOT NULL,
+    FechaEsperada DATE NOT NULL DEFAULT CURRENT_DATE,
+    FechaPago DATE,
+    Importe DECIMAL(18,2) NOT NULL,
+    Detalle VARCHAR(255),
+    Estado BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_pago_contrato FOREIGN KEY (ContratoId)
+    REFERENCES Contrato(Id)
+    ON DELETE CASCADE
+);

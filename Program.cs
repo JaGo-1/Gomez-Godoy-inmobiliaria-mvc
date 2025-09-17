@@ -8,6 +8,7 @@ builder.Services.AddTransient<IRepositoryInquilino, RepositoryInquilino>();
 builder.Services.AddTransient<IRepositoryPropietario, RepositoryPropietario>();
 builder.Services.AddTransient<IRepositoryInmueble, RepositoryInmueble>();
 builder.Services.AddTransient<IRepositoryContrato, RepositoryContrato>();
+builder.Services.AddTransient<IRepositoryPago, RepositoryPago>();
 
 
 var app = builder.Build();
