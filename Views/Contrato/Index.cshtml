@@ -34,9 +34,9 @@
             <th>Código</th>
             <th>Dirección</th>
             <th>Inquilino</th>
+            <th>Monto</th>
             <th>Fecha de inicio</th>
             <th>Fecha de fin</th>
-            <th>Monto</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -45,11 +45,11 @@
         {
             <tr>
                 <td>@Html.DisplayFor(modelItem => item.Id)</td>
-                <td>@Html.DisplayFor(modelItem => item.Inmueble.Id)</td>
+                <td>@Html.DisplayFor(modelItem => item.Inmueble.Direccion)</td>
                 <td>@($"{item.Inquilino.Nombre} {item.Inquilino.Apellido}")</td>
+                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
                 <td>@Html.DisplayFor(modelItem => item.Fecha_inicio)</td>
                 <td>@Html.DisplayFor(modelItem => item.Fecha_fin)</td>
-                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>

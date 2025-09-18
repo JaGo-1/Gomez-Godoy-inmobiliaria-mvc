@@ -269,13 +269,18 @@ namespace inmobiliaria_mvc.Repository
                 string sql = @"
                 SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto
                 FROM contrato c
-                INNER JOIN inmueble i ON c.id_inmueble = i.id
-                INNER JOIN inquilino inq ON c.id_inquilino = inq.idInquilino
-                WHERE c.estado = true;
+                INNER JOIN inmueble i ON c.idinmueble = i.id
+                INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
+                WHERE c.estado = true
+                ORDER BY c.id
+                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
                 ";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
+                    cmd.Parameters.AddWithValue("pagina", pagina);
+                    cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
@@ -305,7 +310,7 @@ namespace inmobiliaria_mvc.Repository
             {
                 Items = res,
                 TotalItems = totalItems,
-                PageNumber = tamPagina,
+                PageNumber = pagina,
                 PageSize = tamPagina
             };
         }
