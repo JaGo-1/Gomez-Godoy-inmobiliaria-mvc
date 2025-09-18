@@ -7,7 +7,7 @@ public class Contrato
 {
     [Key]
     public int Id { get; set; }
-    [Display(Name = "Inmuele")]
+    [Display(Name = "Inmueble")]
     public int IdInmueble { get; set; }
     [Display(Name = "Inquilino")]
     public int IdInquilino { get; set; }
@@ -16,12 +16,14 @@ public class Contrato
     public Inquilino Inquilino { get; set; }
     [ValidateNever]
     public Inmueble Inmueble { get; set; }
-    public int Monto { get; set; }
+    public decimal Monto { get; set; }
     [Display(Name = "Fecha de inicio")]
     public DateTime Fecha_inicio { get; set; }
     [Display(Name = "Fecha de fin")]
     public DateTime Fecha_fin { get; set; }
+    public DateTime? FechaTerminacionAnticipada { get; set; }
+    public decimal? MultaCalculada { get; set; }
 
     [ValidateNever]
-    public bool Estado { get; set; }
+    public bool Estado { get; set; } = true;
 }
