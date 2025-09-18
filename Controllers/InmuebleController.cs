@@ -2,6 +2,7 @@
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace inmobiliaria_mvc.Controllers;
@@ -19,9 +20,10 @@ public class InmuebleController : Controller
         this.repoPropietario = repoPropietario;
     }
 
-    public ActionResult Index()
+    public ActionResult Index(int page = 1, int pageSize = 5)
     {
-        var lista = repositorio.ObtenerTodos();
+        //var lista = repositorio.ObtenerTodos();
+        var lista = repositorio.Paginar(page, pageSize);
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))

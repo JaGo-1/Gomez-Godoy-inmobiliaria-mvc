@@ -24,9 +24,10 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         //GET: CONTRATO
-        public ActionResult Index()
+        public ActionResult Index(int page = 1, int pageSize = 5)
         {
-            var contrato = _repo.ObtenerTodos();
+            //var contrato = _repo.ObtenerTodos();
+            var contrato = _repo.Paginar(page, pageSize);
             if (TempData.ContainsKey("Mensaje")) ViewBag.Mensaje = TempData["Mensaje"];
             return View(contrato);
         }
@@ -54,7 +55,7 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
-                if (contrato.Fecha_inicio>= contrato.Fecha_fin)
+                if (contrato.Fecha_inicio >= contrato.Fecha_fin)
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
                 }
@@ -113,7 +114,7 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
-                if (contrato.Fecha_inicio>= contrato.Fecha_fin)
+                if (contrato.Fecha_inicio >= contrato.Fecha_fin)
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
                 }

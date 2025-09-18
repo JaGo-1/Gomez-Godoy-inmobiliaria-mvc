@@ -15,23 +15,23 @@ namespace inmobiliaria_mvc.Controllers
             this._config = config;
         }
 
-        public ActionResult Index()
+        public ActionResult Index(int page = 1, int pageSize = 5)
         {
             try
             {
-                var lista = repositorio.ObtenerTodos();
+                //var lista = repositorio.ObtenerTodos();
+                var inquilinos = repositorio.Paginar(page, pageSize);
                 ViewBag.Id = TempData["Id"];
                 if (TempData.ContainsKey("Mensaje"))
                     ViewBag.Mensaje = TempData["Mensaje"];
-                return View(lista);
+                return View(inquilinos);
             }
             catch (Exception ex)
             {
-                // Manejo de errores
                 throw;
             }
         }
-        
+
         public ActionResult Details(int id)
         {
             try
@@ -147,7 +147,7 @@ namespace inmobiliaria_mvc.Controllers
                 throw;
             }
         }
-        
+
         public ActionResult Delete(int id)
         {
             try

@@ -14,13 +14,16 @@
     <div class="sidebar">
         <div class="logo">Inmobiliaria</div>
         <nav>
-            <a asp-controller="Home"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-            <a asp-controller="Inquilino"><i class="fas fa-building"></i> <span>Inquilinos</span></a>
-            <a asp-controller="Propietario"><i class="fas fa-bug"></i> <span>Propietarios</span></a>
-            <a asp-controller="Inmueble"><i class="fas fa-bug"></i> <span>Inmueble</span></a>
-            <a asp-controller="Contrato"><i class="fas fa-bug"></i><span>Contrato</span></a>
-            <a asp-controller="Pago"><i class="fas fa-bug"></i><span>Pago</span></a>
-
+            <a asp-controller="Home" asp-action="Index"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a asp-controller="Inquilino" asp-action="Index"><i
+                    class="fa-solid fa-users"></i><span>Inquilinos</span></a>
+            <a asp-controller="Propietario" asp-action="Index"><i
+                    class="fa-solid fa-key"></i><span>Propietarios</span></a>
+            <a asp-controller="Inmueble" asp-action="Index"><i
+                    class="fa-solid fa-building"></i><span>Inmueble</span></a>
+            <a asp-controller="Contrato" asp-action="Index"><i
+                    class="fa-solid fa-file-contract"></i><span>Contrato</span></a>
+            <a asp-controller="Pago" asp-action="Index"><i class="fa-solid fa-money-bill"></i><span>Pago</span></a>
 
         </nav>
     </div>

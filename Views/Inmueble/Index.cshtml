@@ -1,4 +1,5 @@
-﻿@model IEnumerable<inmobiliaria_mvc.Models.Inmueble>
+﻿@using inmobiliaria_mvc.ViewModels
+@model PagedResult<Inmueble>
 
 @{
     ViewData["Title"] = "Lista de Inmuebles";
@@ -17,7 +18,8 @@
 
 <form asp-action="Index" method="get" class="mb-3">
     <div class="input-group">
-        <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario" value="@ViewData["Termino"]" />
+        <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario"
+            value="@ViewData["Termino"]" />
         <button type="submit" class="btn btn-primary">Buscar</button>
     </div>
 </form>
@@ -29,17 +31,17 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(model => model.Id)</th>
-            <th>@Html.DisplayNameFor(model => model.Direccion)</th>
-            <th>@Html.DisplayNameFor(model => model.Precio)</th>
-            <th>@Html.DisplayNameFor(model => model.Ambientes)</th>
-            <th>@Html.DisplayNameFor(model => model.Estado)</th>
-            <th>@Html.DisplayNameFor(model => model.PropietarioId)</th>
+            <th>Código</th>
+            <th>Dirección</th>
+            <th>Precio</th>
+            <th>Ambientes</th>
+            <th>Estado</th>
+            <th>Propietario</th>
             <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (var item in Model.Items)
         {
             <tr>
                 <td>@Html.DisplayFor(modelItem => item.Id)</td>
@@ -57,3 +59,5 @@
         }
     </tbody>
 </table>
+
+<partial name="_Pagination" model="Model.ToObjectPagedResult()" />

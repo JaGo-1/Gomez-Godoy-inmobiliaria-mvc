@@ -1,4 +1,5 @@
-@model IEnumerable<inmobiliaria_mvc.Models.Contrato>
+@using inmobiliaria_mvc.ViewModels
+@model PagedResult<Contrato>
 
 @{
     ViewData["Title"] = "Contratos";
@@ -30,25 +31,25 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(model => model.Id)</th>
-            <th>@Html.DisplayNameFor(model => model.Inmueble)</th>
-            <th>@Html.DisplayNameFor(model => model.Inquilino)</th>
-            <th>@Html.DisplayNameFor(model => model.Fecha_inicio)</th>
-            <th>@Html.DisplayNameFor(model => model.Fecha_fin)</th>
-            <th>@Html.DisplayNameFor(model => model.Monto)</th>
+            <th>Código</th>
+            <th>Dirección</th>
+            <th>Inquilino</th>
+            <th>Monto</th>
+            <th>Fecha de inicio</th>
+            <th>Fecha de fin</th>
             <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (var item in Model.Items)
         {
             <tr>
                 <td>@Html.DisplayFor(modelItem => item.Id)</td>
-                <td>@Html.DisplayFor(modelItem => item.Inmueble.Id)</td>
+                <td>@Html.DisplayFor(modelItem => item.Inmueble.Direccion)</td>
                 <td>@($"{item.Inquilino.Nombre} {item.Inquilino.Apellido}")</td>
+                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
                 <td>@Html.DisplayFor(modelItem => item.Fecha_inicio)</td>
                 <td>@Html.DisplayFor(modelItem => item.Fecha_fin)</td>
-                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
@@ -58,3 +59,5 @@
         }
     </tbody>
 </table>
+
+<partial name="_Pagination" model="Model.ToObjectPagedResult()" />
