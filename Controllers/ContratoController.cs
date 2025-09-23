@@ -1,5 +1,7 @@
+using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -24,12 +26,63 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         //GET: CONTRATO
-        public ActionResult Index(int page = 1, int pageSize = 5)
+
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, bool? disponible = null)
         {
-            //var contrato = _repo.ObtenerTodos();
-            var contrato = _repo.Paginar(page, pageSize);
-            if (TempData.ContainsKey("Mensaje")) ViewBag.Mensaje = TempData["Mensaje"];
-            return View(contrato);
+            try
+            {
+                var contratos = _repo.Paginar(page, pageSize, disponible);
+
+                var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
+                {
+                    { "Código", c.Id },
+                    { "Dirección", c.Inmueble.Direccion },
+                    { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
+                    { "Monto", c.Monto },
+                    { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
+                    { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
+                    { "Acciones", $@"
+                        <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                        <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                        <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                    " }
+                });
+
+                ViewData["Disponible"] = disponible;
+
+                return PartialView("_Tabla", tabla);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("error" + e.Message);
+                throw;
+            }
+        }
+
+        public ActionResult Index(int page = 1, int pageSize = 10, bool? disponible = null)
+        {
+            var contratos = _repo.Paginar(page, pageSize, disponible);
+            var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
+            {
+                { "Código", c.Id },
+                { "Dirección", c.Inmueble.Direccion },
+                { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
+                { "Monto", c.Monto },
+                { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
+                { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
+                { "Acciones", $@"
+                    <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
+
+            if (TempData.ContainsKey("Mensaje"))
+                ViewBag.Mensaje = TempData["Mensaje"];
+
+            ViewData["Disponible"] = disponible;
+
+            return View(tabla);
         }
 
         //GET: Contrato/Create

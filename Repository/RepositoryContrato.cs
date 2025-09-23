@@ -251,8 +251,7 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
-
-        public PagedResult<Contrato> Paginar(int pagina, int tamPagina)
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null)
         {
             var res = new List<Contrato>();
             int totalItems = 0;
@@ -260,26 +259,39 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 conn.Open();
-                string countSql = "SELECT COUNT (*) FROM contrato WHERE estado = true";
+
+                string whereClause = "";
+                if (disponible.HasValue)
+                {
+                    whereClause = "WHERE c.estado = @disponible";
+                }
+
+                string countSql = $"SELECT COUNT(*) FROM contrato c {whereClause}";
                 using (var countCmd = new NpgsqlCommand(countSql, conn))
                 {
+                    if (disponible.HasValue)
+                        countCmd.Parameters.AddWithValue("disponible", disponible.Value);
+
                     totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
                 }
 
-                string sql = @"
-                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto
-                FROM contrato c
-                INNER JOIN inmueble i ON c.idinmueble = i.id
-                INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
-                WHERE c.estado = true
-                ORDER BY c.id
-                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
-                ";
+                string sql = $@"
+            SELECT c.id, i.direccion, inq.nombre, inq.apellido, 
+            c.fecha_inicio, c.fecha_fin, c.monto
+            FROM contrato c
+            INNER JOIN inmueble i ON c.idinmueble = i.id
+            INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
+            {whereClause}
+            ORDER BY c.id
+            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("pagina", pagina);
                     cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    if (disponible.HasValue)
+                        cmd.Parameters.AddWithValue("disponible", disponible.Value);
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -306,6 +318,7 @@ namespace inmobiliaria_mvc.Repository
                 }
                 conn.Close();
             }
+
             return new PagedResult<Contrato>
             {
                 Items = res,
@@ -314,6 +327,7 @@ namespace inmobiliaria_mvc.Repository
                 PageSize = tamPagina
             };
         }
+
 
         public bool TerminarAnticipado(int contratoId, DateTime fechaTerminacion, bool pagarMultaAhora = false)
         {

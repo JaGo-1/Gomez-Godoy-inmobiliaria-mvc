@@ -1,5 +1,5 @@
 @using inmobiliaria_mvc.ViewModels
-@model PagedResult<Contrato>
+@model TablaViewModel<Contrato>
 
 @{
     ViewData["Title"] = "Contratos";
@@ -27,37 +27,81 @@
 <p>
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
 </p>
+@{
+    var disponible = ViewData["Disponible"] as bool?;
+    var opciones = new List<SelectListItem>
+{
+new SelectListItem { Text = "Todos", Value = "", Selected = disponible == null },
+new SelectListItem { Text = "Contratos vigentes", Value = "true", Selected = disponible == true },
+new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = disponible == false }
+};
+}
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Dirección</th>
-            <th>Inquilino</th>
-            <th>Monto</th>
-            <th>Fecha de inicio</th>
-            <th>Fecha de fin</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.Id)</td>
-                <td>@Html.DisplayFor(modelItem => item.Inmueble.Direccion)</td>
-                <td>@($"{item.Inquilino.Nombre} {item.Inquilino.Apellido}")</td>
-                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
-                <td>@Html.DisplayFor(modelItem => item.Fecha_inicio)</td>
-                <td>@Html.DisplayFor(modelItem => item.Fecha_fin)</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="dropdown">
+        <!-- Botón de Filtro -->
+        <button class="btn btn-outline-secondary d-flex align-items-center dropdown-toggle px-3 py-2 gap-2  "
+            type="button" id="dropdownFiltro" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-sliders"></i>
+            Filtrar
+        </button>
 
-<partial name="_Pagination" model="Model.ToObjectPagedResult()" />
+        <!-- Opciones -->
+        <ul class="dropdown-menu border-1" aria-labelledby="dropdownFiltro">
+            <li>
+                <button type="submit" name="disponible" value=""
+                    class="dropdown-item @(disponible == null ? "active fw-bold" : "")">
+                    <i class="bi bi-list-check me-2"></i> Todos
+                </button>
+            </li>
+            <li>
+                <button type="submit" name="disponible" value="true"
+                    class="dropdown-item @(disponible == true ? "active fw-bold" : "")">
+                    <i class="bi bi-check-circle me-2 text-success"></i> Vigentes
+                </button>
+            </li>
+            <li>
+                <button type="submit" name="disponible" value="false"
+                    class="dropdown-item @(disponible == false ? "active fw-bold" : "")">
+                    <i class="bi bi-x-circle me-2 text-danger"></i> Cancelados
+                </button>
+            </li>
+        </ul>
+    </div>
+</form>
+
+
+
+<div id="tabla-contratos">
+    <partial name="_Tabla" model="Model" />
+</div>
+
+<script>
+    function cargarTabla(page = 1, disponible = "") {
+        fetch(`/Contrato/Filtrar?page=${page}&disponible=${disponible}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("tabla-contratos").innerHTML = html;
+                attachEvents();
+            });
+    }
+
+    function attachEvents() {
+        document.querySelector("#filtro-disponible select")?.addEventListener("change", function () {
+            cargarTabla(1, this.value);
+        });
+
+        document.querySelectorAll("#tabla-contratos .page-link[data-page]")?.forEach(link => {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+                const page = this.getAttribute("data-page");
+                const disponible = document.querySelector("#filtro-disponible select")?.value || "";
+                cargarTabla(page, disponible);
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        attachEvents();
+    });
+</script>
