@@ -12,14 +12,16 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryContrato _repo;
         private readonly IRepositoryInmueble _repoInmueble;
         private readonly IRepositoryInquilino _repoInquilino;
+        private readonly IRepositoryPago _repoPago;
         private readonly IConfiguration _config;
 
-        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IConfiguration config)
+        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
             _repoInmueble = repoInmueble;
             _repoInquilino = repoInquilino;
+            _repoPago = repoPago;
             _config = config;
         }
 
@@ -180,6 +182,70 @@ namespace inmobiliaria_mvc.Controllers
                 _logger.LogError(ex, "Error al eliminar contrato: Delete()" + ex.Message);
                 return RedirectToAction(nameof(Index));
             }
+        }
+        
+        // GET: Contrato/TerminarAnticipado
+        public ActionResult TerminarAnticipado(int id)
+        {
+            var contrato = _repo.ObtenerPorId(id);
+            if (contrato == null) { TempData["Error"] = "Contrato no encontrado."; return RedirectToAction(nameof(Index)); }
+
+            ViewBag.TotalMeses = _repo.CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            ViewBag.MesesTranscurridos = 0;
+            ViewBag.MesesAdeudados = 0;
+            ViewBag.MultaMeses = 0;
+            ViewBag.MultaImporte = 0m;
+
+            return View(contrato);
+        }
+
+        // POST: Contrato/TerminarAnticipado
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult TerminarAnticipado(int id, DateTime FechaTerminacionAnticipada, bool pagarMultaAhora = false)
+        {
+            var contrato = _repo.ObtenerPorId(id);
+            if (contrato == null) { TempData["Error"] = "Contrato no encontrado."; return RedirectToAction(nameof(Index)); }
+
+            bool exito = _repo.TerminarAnticipado(id, FechaTerminacionAnticipada, pagarMultaAhora);
+
+            if (exito)
+            {
+                var multa = _repo.CalcularMultaImporte(contrato, FechaTerminacionAnticipada);
+                string estado = pagarMultaAhora ? "pagada en el momento" : "registrada como pendiente";
+                TempData["Mensaje"] = $"Contrato marcado para terminar el {FechaTerminacionAnticipada:d}. Multa: {multa:C}, {estado}.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Error"] = "Error al terminar anticipadamente el contrato.";
+            return RedirectToAction(nameof(TerminarAnticipado), new { id });
+        }
+
+
+        // GET: Contrato/CalcularMulta
+        [HttpGet]
+        public JsonResult CalcularMulta(int id, DateTime fechaTerminacion)
+        {
+            var contrato = _repo.ObtenerPorId(id);
+            if (contrato == null) return Json(new { error = "Contrato no encontrado." });
+
+            if (fechaTerminacion < contrato.Fecha_inicio || fechaTerminacion > contrato.Fecha_fin)
+                return Json(new { error = "La fecha de terminación debe estar dentro del periodo del contrato." });
+
+            var totalMeses = _repo.CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            var mesesTranscurridos = _repo.CalcularMesesTranscurridos(contrato, fechaTerminacion);
+            var mesesAdeudados = _repo.CalcularMesesAdeudados(contrato, fechaTerminacion);
+            var multaMeses = _repo.CalcularMultaMeses(contrato, fechaTerminacion);
+            var multaImporte = _repo.CalcularMultaImporte(contrato, fechaTerminacion);
+
+            return Json(new
+            {
+                totalMeses,
+                mesesTranscurridos,
+                mesesAdeudados,
+                multaMeses,
+                multaImporte
+            });
         }
     }
 }

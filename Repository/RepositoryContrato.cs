@@ -314,53 +314,77 @@ namespace inmobiliaria_mvc.Repository
                 PageSize = tamPagina
             };
         }
-
         public bool TerminarAnticipado(int contratoId, DateTime fechaTerminacion, bool pagarMultaAhora = false)
         {
             var contrato = ObtenerPorId(contratoId);
             if (contrato == null) return false;
 
-            var totalMeses = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
-            var mesesTranscurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
-            var esMenosDeMitad = mesesTranscurridos < totalMeses / 2.0;
-            var multaMeses = esMenosDeMitad ? 2 : 1;
-            var multaImporte = multaMeses * contrato.Monto;
-            contrato.MultaCalculada = multaImporte;
+            if (contrato.FechaTerminacionAnticipada.HasValue) return false;
+
+            contrato.MultaCalculada = CalcularMultaImporte(contrato, fechaTerminacion);
             contrato.FechaTerminacionAnticipada = fechaTerminacion;
+            contrato.Fecha_fin = fechaTerminacion;
+            Modificacion(contrato); 
 
-            Modificacion(contrato);
+            var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true).ToList();
+            var pagosFuturos = pagos
+                .Where(p => p.FechaEsperada > fechaTerminacion && p.FechaPago == null && p.Estado)
+                .ToList();
 
-            var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true);
-            var pagoPendiente = pagos.FirstOrDefault(p => p.Estado && p.Detalle.Contains("Pendiente"));
-            if (pagoPendiente != null)
+            foreach (var p in pagosFuturos)
             {
-                _repoPago.AnularPago(pagoPendiente.IdPago);
+                _repoPago.AnularPago(p.IdPago);
             }
-
-            if (pagarMultaAhora)
+            
+            var existingMulta = pagos.FirstOrDefault(p => p.EsMulta);
+            if (existingMulta != null) return false;
+            
+            var ultimoNumero = pagos.Any() ? pagos.Max(p => p.NumeroPago) : 0;
+            var pagoMulta = new Pago
             {
-                var ultimoNumero = pagos.Any() ? pagos.Max(p => p.NumeroPago) : 0;
-                var pagoMulta = new Pago
-                {
-                    ContratoId = contratoId,
-                    NumeroPago = ultimoNumero + 1,
-                    FechaEsperada = DateTime.Now,
-                    FechaPago = DateTime.Now,
-                    Importe = multaImporte,
-                    Detalle = $"Multa por terminación anticipada ({multaMeses} meses extra)",
-                    Estado = true
-                };
-                _repoPago.Alta(pagoMulta);
-            }
+                ContratoId = contratoId,
+                NumeroPago = ultimoNumero + 1,
+                FechaEsperada = fechaTerminacion,
+                FechaPago = pagarMultaAhora ? DateTime.Now : (DateTime?)null,
+                Importe = contrato.MultaCalculada ?? 0m,
+                Detalle = $"Multa por terminación anticipada ({CalcularMultaMeses(contrato, fechaTerminacion)} mes(es))",
+                Estado = true,
+                EsMulta = true
+            };
+            _repoPago.Alta(pagoMulta);
 
             return true;
         }
 
-        private int CalcularMesesContrato(DateTime inicio, DateTime fin)
+        public int CalcularMesesContrato(DateTime inicio, DateTime fin)
         {
             var meses = (fin.Year - inicio.Year) * 12 + fin.Month - inicio.Month;
             if (fin.Day < inicio.Day) meses--;
             return Math.Max(meses, 1);
+        }
+
+        public int CalcularMesesTranscurridos(Contrato contrato, DateTime fechaTerminacion)
+        {
+            return CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+        }
+
+        public int CalcularMesesAdeudados(Contrato contrato, DateTime fechaTerminacion)
+        {
+            var total = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            var transcurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+            return Math.Max(total - transcurridos, 0);
+        }
+
+        public int CalcularMultaMeses(Contrato contrato, DateTime fechaTerminacion)
+        {
+            var transcurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+            var total = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            return transcurridos < total / 2.0 ? 2 : 1;
+        }
+
+        public decimal CalcularMultaImporte(Contrato contrato, DateTime fechaTerminacion)
+        {
+            return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
         }
     }
 }

@@ -18,8 +18,8 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 var sql = @"INSERT INTO Pago 
-                            (ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado)
-                            VALUES (@contratoId, @numeroPago, @fechaEsperada, @fechaPago, @importe, @detalle, @estado)
+                            (ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado, EsMulta)
+                            VALUES (@contratoId, @numeroPago, @fechaEsperada, @fechaPago, @importe, @detalle, @estado, @EsMulta)
                             RETURNING IdPago;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -30,6 +30,7 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("importe", pago.Importe);
                     cmd.Parameters.AddWithValue("detalle", pago.Detalle ?? string.Empty);
                     cmd.Parameters.AddWithValue("estado", pago.Estado);
+                    cmd.Parameters.AddWithValue("EsMulta", pago.EsMulta);
 
                     conn.Open();
                     var id = cmd.ExecuteScalar();
@@ -95,7 +96,7 @@ namespace inmobiliaria_mvc.Repository
             var res = new List<Pago>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = @"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado
+                string sql = @"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado, EsMulta
                                FROM Pago WHERE Estado = true;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -113,7 +114,8 @@ namespace inmobiliaria_mvc.Repository
                                 FechaPago = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4),
                                 Importe = reader.GetDecimal(5),
                                 Detalle = reader.GetString(6),
-                                Estado = reader.GetBoolean(7)
+                                Estado = reader.GetBoolean(7),
+                                EsMulta = reader.GetBoolean(8)
                             });
                         }
                     }
@@ -129,7 +131,7 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 string condicionEstado = incluirAnulados ? "" : "AND Estado = true";
-                string sql = $@"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado
+                string sql = $@"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado, EsMulta
                                FROM Pago 
                                WHERE ContratoId = @contratoId {condicionEstado}
                                ORDER BY NumeroPago;";
@@ -150,7 +152,8 @@ namespace inmobiliaria_mvc.Repository
                                 FechaPago = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4),
                                 Importe = reader.GetDecimal(5),
                                 Detalle = reader.GetString(6),
-                                Estado = reader.GetBoolean(7)
+                                Estado = reader.GetBoolean(7),
+                                EsMulta =  reader.GetBoolean(8)
                             });
                         }
                     }
@@ -165,7 +168,7 @@ namespace inmobiliaria_mvc.Repository
             Pago? pago = null;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = @"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado
+                string sql = @"SELECT IdPago, ContratoId, NumeroPago, FechaEsperada, FechaPago, Importe, Detalle, Estado, EsMulta
                                FROM Pago WHERE IdPago = @id;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -184,7 +187,8 @@ namespace inmobiliaria_mvc.Repository
                                 FechaPago = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4),
                                 Importe = reader.GetDecimal(5),
                                 Detalle = reader.GetString(6),
-                                Estado = reader.GetBoolean(7)
+                                Estado = reader.GetBoolean(7),
+                                EsMulta = reader.GetBoolean(8)
                             };
                         }
                     }
@@ -208,12 +212,16 @@ namespace inmobiliaria_mvc.Repository
             };
             return Alta(pago);
         }
-
         public int? CrearSiguientePagoSiAplica(int contratoId, int ultimoNumeroPago, decimal montoMensual, DateTime fechaInicio, DateTime fechaFin)
         {
             var siguienteNumero = ultimoNumeroPago + 1;
             var fechaSiguiente = fechaInicio.AddMonths(siguienteNumero - 1).Date;
             if (fechaSiguiente > fechaFin)
+                return null;
+
+            var existente = ObtenerPorContrato(contratoId, true)
+                .FirstOrDefault(p => p.NumeroPago == siguienteNumero);
+            if (existente != null)
                 return null;
 
             var pagoSiguiente = new Pago
@@ -228,6 +236,7 @@ namespace inmobiliaria_mvc.Repository
             };
             return Alta(pagoSiguiente);
         }
+
 
         public int AnularPago(int idPago)
         {
