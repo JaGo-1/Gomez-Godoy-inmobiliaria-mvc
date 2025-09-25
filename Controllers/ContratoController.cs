@@ -27,11 +27,11 @@ namespace inmobiliaria_mvc.Controllers
 
         //GET: CONTRATO
 
-        public ActionResult Filtrar(int page = 1, int pageSize = 10, bool? disponible = null)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, bool? disponible = null, int? plazo = null)
         {
             try
             {
-                var contratos = _repo.Paginar(page, pageSize, disponible);
+                var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
 
                 var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
                 {
@@ -59,9 +59,9 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        public ActionResult Index(int page = 1, int pageSize = 10, bool? disponible = null)
+        public ActionResult Index(int page = 1, int pageSize = 10, bool? disponible = null, int? plazo = null)
         {
-            var contratos = _repo.Paginar(page, pageSize, disponible);
+            var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
             var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
             {
                 { "Código", c.Id },

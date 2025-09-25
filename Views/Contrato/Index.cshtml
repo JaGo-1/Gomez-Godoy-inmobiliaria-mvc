@@ -27,6 +27,7 @@
 <p>
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
 </p>
+
 @{
     var disponible = ViewData["Disponible"] as bool?;
     var opciones = new List<SelectListItem>
@@ -37,48 +38,53 @@ new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = 
 };
 }
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="dropdown">
-        <!-- Botón de Filtro -->
-        <button class="btn btn-outline-secondary d-flex align-items-center dropdown-toggle px-3 py-2 gap-2  "
-            type="button" id="dropdownFiltro" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa-solid fa-sliders"></i>
-            Filtrar
-        </button>
+<!-- Filtros -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label>Disponibilidad</label>
+        <select id="filtro-disponible" class="form-select">
+            <option value="true" selected="@(disponible == true)">Vigentes</option>
+            <option value="false" selected="@(disponible == false)">Cancelados</option>
+            <option value="" selected="@(disponible == null)">-- Todos --</option>
 
-        <!-- Opciones -->
-        <ul class="dropdown-menu border-1" aria-labelledby="dropdownFiltro">
-            <li>
-                <button type="submit" name="disponible" value=""
-                    class="dropdown-item @(disponible == null ? "active fw-bold" : "")">
-                    <i class="bi bi-list-check me-2"></i> Todos
-                </button>
-            </li>
-            <li>
-                <button type="submit" name="disponible" value="true"
-                    class="dropdown-item @(disponible == true ? "active fw-bold" : "")">
-                    <i class="bi bi-check-circle me-2 text-success"></i> Vigentes
-                </button>
-            </li>
-            <li>
-                <button type="submit" name="disponible" value="false"
-                    class="dropdown-item @(disponible == false ? "active fw-bold" : "")">
-                    <i class="bi bi-x-circle me-2 text-danger"></i> Cancelados
-                </button>
-            </li>
-        </ul>
+        </select>
     </div>
-</form>
 
+    <div class="col-md-4">
+        <label>Plazo (días)</label>
+        <select id="filtro-plazo" class="form-select">
+            <option value="">-- Todos --</option>
+            <option value="30">30 días</option>
+            <option value="60">60 días</option>
+            <option value="90">90 días</option>
+        </select>
+    </div>
 
+    <div class="col-md-4">
+        <label>Plazo personalizado</label>
+        <input type="number" id="filtro-plazo-custom" class="form-control" placeholder="Ej: 45">
+    </div>
+</div>
 
 <div id="tabla-contratos">
     <partial name="_Tabla" model="Model" />
 </div>
 
 <script>
-    function cargarTabla(page = 1, disponible = "") {
-        fetch(`/Contrato/Filtrar?page=${page}&disponible=${disponible}`)
+    function cargarTabla(page = 1) {
+        const disponible = document.getElementById("filtro-disponible").value;
+        const plazoSelect = document.getElementById("filtro-plazo").value;
+        const plazoCustom = document.getElementById("filtro-plazo-custom").value;
+
+        const plazo = plazoCustom || plazoSelect;
+
+        const params = new URLSearchParams({
+            page: page,
+            disponible: disponible,
+            plazo: plazo
+        });
+
+        fetch(`/Contrato/Filtrar?${params.toString()}`)
             .then(res => res.text())
             .then(html => {
                 document.getElementById("tabla-contratos").innerHTML = html;
@@ -87,21 +93,20 @@ new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = 
     }
 
     function attachEvents() {
-        document.querySelector("#filtro-disponible select")?.addEventListener("change", function () {
-            cargarTabla(1, this.value);
-        });
-
         document.querySelectorAll("#tabla-contratos .page-link[data-page]")?.forEach(link => {
             link.addEventListener("click", function (e) {
                 e.preventDefault();
                 const page = this.getAttribute("data-page");
-                const disponible = document.querySelector("#filtro-disponible select")?.value || "";
-                cargarTabla(page, disponible);
+                cargarTabla(page);
             });
         });
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("filtro-disponible").addEventListener("change", () => cargarTabla(1));
+        document.getElementById("filtro-plazo").addEventListener("change", () => cargarTabla(1));
+        document.getElementById("filtro-plazo-custom").addEventListener("input", () => cargarTabla(1));
+
         attachEvents();
     });
 </script>

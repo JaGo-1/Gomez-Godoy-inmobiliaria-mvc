@@ -7,6 +7,6 @@ namespace inmobiliaria_mvc.Repository
     {
         bool ExisteSolapado(int idInmueble, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null);
         List<Contrato> ObtenerContratosPorInmueble(int idInmueble);
-        PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible);
+        PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible, int? plazo);
     }
 }

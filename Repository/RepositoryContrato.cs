@@ -251,7 +251,7 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
-        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null)
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null, int? plazo = null)
         {
             var res = new List<Contrato>();
             int totalItems = 0;
@@ -260,30 +260,40 @@ namespace inmobiliaria_mvc.Repository
             {
                 conn.Open();
 
-                string whereClause = "";
-                if (disponible.HasValue)
-                {
-                    whereClause = "WHERE c.estado = @disponible";
-                }
+                var whereConditions = new List<string>();
 
+                if (disponible.HasValue)
+                    whereConditions.Add("c.estado = @disponible");
+
+                if (plazo.HasValue)
+                    whereConditions.Add("(c.fecha_fin - c.fecha_inicio) = @plazo");
+
+                string whereClause = whereConditions.Any()
+                    ? "WHERE " + string.Join(" AND ", whereConditions)
+                    : "";
+
+                // COUNT
                 string countSql = $"SELECT COUNT(*) FROM contrato c {whereClause}";
                 using (var countCmd = new NpgsqlCommand(countSql, conn))
                 {
                     if (disponible.HasValue)
                         countCmd.Parameters.AddWithValue("disponible", disponible.Value);
 
+                    if (plazo.HasValue)
+                        countCmd.Parameters.AddWithValue("plazo", plazo.Value);
+
                     totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
                 }
 
+                // SELECT
                 string sql = $@"
-            SELECT c.id, i.direccion, inq.nombre, inq.apellido, 
-            c.fecha_inicio, c.fecha_fin, c.monto
-            FROM contrato c
-            INNER JOIN inmueble i ON c.idinmueble = i.id
-            INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
-            {whereClause}
-            ORDER BY c.id
-            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto   
+                FROM contrato c
+                INNER JOIN inmueble i ON c.idinmueble = i.id
+                INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
+                {whereClause}
+                ORDER BY c.id
+                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -292,6 +302,9 @@ namespace inmobiliaria_mvc.Repository
 
                     if (disponible.HasValue)
                         cmd.Parameters.AddWithValue("disponible", disponible.Value);
+
+                    if (plazo.HasValue)
+                        cmd.Parameters.AddWithValue("plazo", plazo.Value);
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -316,7 +329,6 @@ namespace inmobiliaria_mvc.Repository
                         }
                     }
                 }
-                conn.Close();
             }
 
             return new PagedResult<Contrato>
