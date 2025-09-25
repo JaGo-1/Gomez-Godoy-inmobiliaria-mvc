@@ -1,5 +1,6 @@
 ﻿using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace inmobiliaria_mvc.Controllers
@@ -7,13 +8,18 @@ namespace inmobiliaria_mvc.Controllers
     public class InquilinoController : Controller
     {
         private readonly IRepositoryInquilino repositorio;
+        private readonly IRepositoryContrato _repoContrato;
+        private readonly IRepositoryPago _repoPago;
         private readonly IConfiguration _config;
 
-        public InquilinoController(IRepositoryInquilino repo, IConfiguration config)
+        public InquilinoController(IRepositoryInquilino repo, IRepositoryContrato repoContrato, IRepositoryPago repoPago, IConfiguration config)
         {
-            this.repositorio = repo;
-            this._config = config;
+            repositorio = repo;
+            _repoContrato = repoContrato;
+            _repoPago = repoPago;
+            _config = config;
         }
+
 
         public ActionResult Index(int page = 1, int pageSize = 5)
         {
@@ -36,17 +42,43 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
-                var entidad = repositorio.ObtenerPorId(id);
-                if (entidad == null)
+                var inquilino = repositorio.ObtenerPorId(id);
+                if (inquilino == null)
                 {
                     TempData["Error"] = "Inquilino no encontrado.";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(entidad);
+
+                var contratos = _repoContrato.ObtenerTodos()
+                    .Where(c => c.IdInquilino == id && c.Estado)
+                    .ToList();
+
+                var pagos = new List<Pago>();
+                foreach (var contrato in contratos)
+                {
+                    var pagosContrato = _repoPago.ObtenerPorContrato(contrato.Id, incluirAnulados: true)
+                        .OrderBy(p => p.NumeroPago)
+                        .ToList();
+                    pagos.AddRange(pagosContrato);
+                }
+
+                var viewModel = new InquilinoDetalleVM
+                {
+                    Inquilino = inquilino,
+                    Contratos = contratos,
+                    Pagos = pagos
+                };
+
+                if (TempData.ContainsKey("Mensaje"))
+                    ViewBag.Mensaje = TempData["Mensaje"];
+                if (TempData.ContainsKey("Error"))
+                    ViewBag.Error = TempData["Error"];
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                throw;
+                TempData["Error"] = $"Error al obtener detalles del inquilino: {ex.Message}";
+                return RedirectToAction(nameof(Index));
             }
         }
 

@@ -17,5 +17,7 @@ namespace inmobiliaria_mvc.Models
         public string? Detalle { get; set; }
         public bool Estado { get; set; }
         public Contrato? Contrato { get; set; }
+        
+        public bool EsMulta  { get; set; }
     }
 }
