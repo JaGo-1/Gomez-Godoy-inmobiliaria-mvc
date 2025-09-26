@@ -266,7 +266,7 @@ namespace inmobiliaria_mvc.Repository
                     whereConditions.Add("c.estado = @disponible");
 
                 if (plazo.HasValue)
-                    whereConditions.Add("(c.fecha_fin - c.fecha_inicio) = @plazo");
+                    whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
 
                 string whereClause = whereConditions.Any()
                     ? "WHERE " + string.Join(" AND ", whereConditions)
