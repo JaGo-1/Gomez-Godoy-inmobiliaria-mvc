@@ -70,43 +70,27 @@ new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = 
     <partial name="_Tabla" model="Model" />
 </div>
 
-<script>
-    function cargarTabla(page = 1) {
-        const disponible = document.getElementById("filtro-disponible").value;
-        const plazoSelect = document.getElementById("filtro-plazo").value;
-        const plazoCustom = document.getElementById("filtro-plazo-custom").value;
-
-        const plazo = plazoCustom || plazoSelect;
-
-        const params = new URLSearchParams({
-            page: page,
-            disponible: disponible,
-            plazo: plazo
-        });
-
-        fetch(`/Contrato/Filtrar?${params.toString()}`)
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById("tabla-contratos").innerHTML = html;
-                attachEvents();
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaContratos = initTabla({
+                endpoint: "/Contrato/Filtrar",
+                containerId: "tabla-contratos",
+                extraParamsFn: () => {
+                    const disponible = document.getElementById("filtro-disponible")?.value || "";
+                    const plazoSelect = document.getElementById("filtro-plazo")?.value || "";
+                    const plazoCustom = document.getElementById("filtro-plazo-custom")?.value || "";
+                    return { disponible, plazo: plazoCustom || plazoSelect };
+                }
             });
-    }
 
-    function attachEvents() {
-        document.querySelectorAll("#tabla-contratos .page-link[data-page]")?.forEach(link => {
-            link.addEventListener("click", function (e) {
-                e.preventDefault();
-                const page = this.getAttribute("data-page");
-                cargarTabla(page);
-            });
+            // Filtros
+            document.getElementById("filtro-disponible")?.addEventListener("change", () => tablaContratos.init(1));
+            document.getElementById("filtro-plazo")?.addEventListener("change", () => tablaContratos.init(1));
+            document.getElementById("filtro-plazo-custom")?.addEventListener("input", () => tablaContratos.init(1));
+
+            tablaContratos.init(1);
         });
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById("filtro-disponible").addEventListener("change", () => cargarTabla(1));
-        document.getElementById("filtro-plazo").addEventListener("change", () => cargarTabla(1));
-        document.getElementById("filtro-plazo-custom").addEventListener("input", () => cargarTabla(1));
-
-        attachEvents();
-    });
-</script>
+    </script>
+}

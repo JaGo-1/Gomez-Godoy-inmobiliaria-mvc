@@ -1,7 +1,6 @@
 using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
-using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -236,7 +235,7 @@ namespace inmobiliaria_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
-        
+
         // GET: Contrato/TerminarAnticipado
         public ActionResult TerminarAnticipado(int id)
         {

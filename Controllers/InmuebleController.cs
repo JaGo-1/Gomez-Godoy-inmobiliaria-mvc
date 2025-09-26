@@ -1,8 +1,8 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using inmobiliaria_mvc.Helpers;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace inmobiliaria_mvc.Controllers;
@@ -20,15 +20,53 @@ public class InmuebleController : Controller
         this.repoPropietario = repoPropietario;
     }
 
+    public ActionResult Filtrar(int page = 1, int pageSize = 10)
+    {
+        var lista = repositorio.Paginar(page, pageSize);
+        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+    {
+        { "Código", l.Id },
+        { "Dirección", l.Direccion },
+        { "Precio", l.Precio },
+        { "Ambientes", l.Ambientes },
+        { "Estado", l.Estado ? "<span class='badge bg-success'>Disponible</span>"
+        : "<span class='badge bg-danger'>Inactivo</span>" },
+        { "Propietario", l.Propietario?.NombreCompleto },
+        { "Acciones", $@"
+            <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
+            <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+            <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+        " }
+    });
+
+        return PartialView("_Tabla", tabla);
+    }
+
     public ActionResult Index(int page = 1, int pageSize = 5)
     {
-        //var lista = repositorio.ObtenerTodos();
         var lista = repositorio.Paginar(page, pageSize);
+
+        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+        {
+            { "Código", l.Id },
+            { "Dirección", l.Direccion },
+            { "Precio", l.Precio },
+            { "Ambientes", l.Ambientes },
+            { "Estado", l.Estado ? "<span class='badge bg-success'>Disponible</span>"
+            : "<span class='badge bg-danger'>Inactivo</span>" },
+            { "Propietario", l.Propietario?.NombreCompleto },
+            { "Acciones", $@"
+                    <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+        });
+
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
-        return View(lista);
+        return View(tabla);
     }
 
     public ActionResult Create()
