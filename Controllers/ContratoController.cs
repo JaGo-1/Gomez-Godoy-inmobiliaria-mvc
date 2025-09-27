@@ -1,6 +1,7 @@
 using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -32,51 +33,21 @@ namespace inmobiliaria_mvc.Controllers
         {
             try
             {
-                var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
-
-                var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
-                {
-                    { "Código", c.Id },
-                    { "Dirección", c.Inmueble.Direccion },
-                    { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
-                    { "Monto", c.Monto },
-                    { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
-                    { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-                    { "Acciones", $@"
-                        <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                        <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                        <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-                    " }
-                });
-
+                var tabla = ConstruirTabla(page, pageSize, disponible, plazo);
                 ViewData["Disponible"] = disponible;
 
                 return PartialView("_Tabla", tabla);
             }
             catch (Exception e)
             {
-                Console.WriteLine("error" + e.Message);
+                Console.WriteLine("Error: " + e.Message);
                 throw;
             }
         }
 
         public ActionResult Index(int page = 1, int pageSize = 10, bool? disponible = null, int? plazo = null)
         {
-            var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
-            var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
-            {
-                { "Código", c.Id },
-                { "Dirección", c.Inmueble.Direccion },
-                { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
-                { "Monto", c.Monto },
-                { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
-                { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-                { "Acciones", $@"
-                    <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-                " }
-            });
+            var tabla = ConstruirTabla(page, pageSize, disponible, plazo);
 
             if (TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
@@ -298,6 +269,28 @@ namespace inmobiliaria_mvc.Controllers
                 multaMeses,
                 multaImporte
             });
+        }
+
+        private TablaViewModel<Contrato> ConstruirTabla(int page, int pageSize, bool? disponible, int? plazo)
+        {
+            var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
+
+            var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
+        {
+            { "Código", c.Id },
+            { "Dirección", c.Inmueble.Direccion },
+            { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
+            { "Monto", c.Monto },
+            { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
+            { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
+            { "Acciones", $@"
+                <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+            " }
+        });
+
+            return tabla;
         }
     }
 }

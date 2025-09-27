@@ -22,50 +22,19 @@ public class InmuebleController : Controller
 
     public ActionResult Filtrar(int page = 1, int pageSize = 10)
     {
-        var lista = repositorio.Paginar(page, pageSize);
-        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
-    {
-        { "Código", l.Id },
-        { "Dirección", l.Direccion },
-        { "Precio", l.Precio },
-        { "Ambientes", l.Ambientes },
-        { "Estado", l.Estado ? "<span class='badge bg-success'>Disponible</span>"
-        : "<span class='badge bg-danger'>Inactivo</span>" },
-        { "Propietario", l.Propietario?.NombreCompleto },
-        { "Acciones", $@"
-            <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
-            <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
-            <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-        " }
-    });
-
+        var tabla = ConstruirTabla(page, pageSize);
         return PartialView("_Tabla", tabla);
     }
 
     public ActionResult Index(int page = 1, int pageSize = 5)
     {
-        var lista = repositorio.Paginar(page, pageSize);
-
-        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
-        {
-            { "Código", l.Id },
-            { "Dirección", l.Direccion },
-            { "Precio", l.Precio },
-            { "Ambientes", l.Ambientes },
-            { "Estado", l.Estado ? "<span class='badge bg-success'>Disponible</span>"
-            : "<span class='badge bg-danger'>Inactivo</span>" },
-            { "Propietario", l.Propietario?.NombreCompleto },
-            { "Acciones", $@"
-                    <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-                " }
-        });
+        var tabla = ConstruirTabla(page, pageSize);
 
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
+
         return View(tabla);
     }
 
@@ -187,5 +156,29 @@ public class InmuebleController : Controller
             TempData["Error"] = "Hubo un error al eliminar el Inmueble.";
             return RedirectToAction(nameof(Index));
         }
+    }
+
+    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize)
+    {
+        var lista = repositorio.Paginar(page, pageSize);
+
+        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+        {
+            { "Código", l.Id },
+            { "Dirección", l.Direccion },
+            { "Precio", l.Precio },
+            { "Ambientes", l.Ambientes },
+            { "Estado", l.Estado
+                ? "<span class='badge bg-success'>Disponible</span>"
+                : "<span class='badge bg-danger'>Inactivo</span>" },
+            { "Propietario", l.Propietario?.NombreCompleto },
+            { "Acciones", $@"
+                <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+            " }
+        });
+
+        return tabla;
     }
 }

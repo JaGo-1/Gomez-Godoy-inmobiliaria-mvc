@@ -1,4 +1,5 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using inmobiliaria_mvc.Helpers;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -20,22 +21,21 @@ namespace inmobiliaria_mvc.Controllers
             _config = config;
         }
 
-
-        public ActionResult Index(int page = 1, int pageSize = 5)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10)
         {
-            try
-            {
-                //var lista = repositorio.ObtenerTodos();
-                var inquilinos = repositorio.Paginar(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize);
+            return PartialView("_Tabla", tabla);
+        }
+
+        public ActionResult Index(int page = 1, int pageSize = 10)
+        {
+            var tabla = ConstruirTabla(page, pageSize);
+            if (TempData.ContainsKey("Id"))
                 ViewBag.Id = TempData["Id"];
-                if (TempData.ContainsKey("Mensaje"))
-                    ViewBag.Mensaje = TempData["Mensaje"];
-                return View(inquilinos);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            if (TempData.ContainsKey("Mensaje"))
+                ViewBag.Mensaje = TempData["Mensaje"];
+
+            return View(tabla);
         }
 
         public ActionResult Details(int id)
@@ -211,6 +211,26 @@ namespace inmobiliaria_mvc.Controllers
                 TempData["Error"] = "Hubo un error al eliminar el inquilino.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize)
+        {
+            var lista = repositorio.Paginar(page, pageSize);
+            var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+            {
+                { "Código", l.IdInquilino },
+                { "DNI", l.Dni},
+                { "Nombre", $"{l.Nombre} {l.Apellido}"},
+                {"Teléfono", l.Telefono},
+                {"Email", l.Email},
+                { "Acciones", $@"
+                    <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Inquilino/Delete/{l.IdInquilino}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
+
+            return tabla;
         }
     }
 }

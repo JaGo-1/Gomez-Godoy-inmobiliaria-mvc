@@ -1,5 +1,5 @@
 @using inmobiliaria_mvc.ViewModels
-@model PagedResult<Propietario>
+@model TablaViewModel<Propietario>
 
 @{
     ViewData["Title"] = "Lista de Propietarios";
@@ -28,7 +28,7 @@
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Propietario</a>
 </p>
 
-<table class="table table-striped">
+@* <table class="table table-striped">
     <thead>
         <tr>
             <th>Código</th>
@@ -58,4 +58,21 @@
     </tbody>
 </table>
 
-<partial name="_Pagination" model="Model.ToObjectPagedResult()" />
+<partial name="_Pagination" model="Model.ToObjectPagedResult()" /> *@
+<div id="tabla-propietario">
+    <partial name="_Tabla" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaPropietario = initTabla({
+                endpoint: "/Propietario/Filtrar",
+                containerId: "tabla-propietario"
+            });
+
+            tablaPropietario.init(1);
+        });
+    </script>
+}
