@@ -109,6 +109,47 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
+        //GET:Contrato/Renovar/:id
+        public ActionResult Renovar(int id)
+        {
+            var contrato = _repo.ObtenerPorId(id);
+            if (contrato == null)
+            {
+                TempData["Error"] = "Contrato no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            contrato.Inquilino = _repoInquilino.ObtenerPorId(contrato.IdInquilino);
+            contrato.Inmueble = _repoInmueble.ObtenerPorId(contrato.IdInmueble);
+
+            return View("Renovar", contrato);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Renovar(Contrato contrato)
+        {
+            if (contrato.Fecha_inicio >= contrato.Fecha_fin)
+            {
+                ModelState.AddModelError("", "La fecha de inicio debe ser anterior a la fecha de fin.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
+                {
+                    _repo.Alta(contrato);
+                    TempData["Mensaje"] = "Contrato renovado correctamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    ModelState.AddModelError("", "El inmueble ya tiene un contrato en esas fechas.");
+                }
+            }
+
+            return View("Renovar", contrato);
+        }
 
         //GET: Contrato/Edit
         public ActionResult Edit(int id)
@@ -284,7 +325,7 @@ namespace inmobiliaria_mvc.Controllers
             { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
             { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
             { "Acciones", $@"
-                <a href='/Contrato/Details/{c.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
                 <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
                 <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
             " }

@@ -1,5 +1,5 @@
 ﻿@using inmobiliaria_mvc.ViewModels
-@model PagedResult<Inquilino>
+@model TablaViewModel<Inquilino>
 
 @{
     ViewData["Title"] = "Lista de Inquilinos";
@@ -28,7 +28,7 @@
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Inquilino</a>
 </p>
 
-<div class="tabla-inquilino">
+<div id="tabla-inquilino">
     <partial name="_Tabla" model="Model" />
 </div>
 
