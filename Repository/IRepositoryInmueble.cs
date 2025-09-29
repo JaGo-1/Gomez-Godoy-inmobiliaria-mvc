@@ -7,4 +7,6 @@ public interface IRepositoryInmueble : IRepository<Inmueble>
 {
     List<Inmueble> ObtenerPorPropietario(int propietarioId);
     PagedResult<Inmueble> Paginar(int pagina, int tamPagina);
+    int ModificarPortada(int InmuebleId, string ruta);
+
 }

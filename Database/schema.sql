@@ -39,6 +39,7 @@ CREATE TABLE Inmueble (
     Uso VARCHAR(50) NOT NULL,
     Tipo VARCHAR(50) NOT NULL,
     PropietarioId INT NOT NULL,
+    Portada VARCHAR(255),
     CONSTRAINT fk_propietario FOREIGN KEY (PropietarioId)
     REFERENCES Propietario(Id)
     ON DELETE CASCADE
@@ -76,5 +77,15 @@ CREATE TABLE IF NOT EXISTS Pago (
     EsMulta BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_pago_contrato FOREIGN KEY (ContratoId)
     REFERENCES Contrato(Id)
+    ON DELETE CASCADE
+);
+
+-- Tabla Imagen
+CREATE TABLE IF NOT EXISTS Imagen (
+    Id SERIAL PRIMARY KEY,
+    InmuebleId INT NOT NULL,
+    Url VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_inmueble FOREIGN KEY (InmuebleId)
+    REFERENCES Inmueble(Id)
     ON DELETE CASCADE
 );

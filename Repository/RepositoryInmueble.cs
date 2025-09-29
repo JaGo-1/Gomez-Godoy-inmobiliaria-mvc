@@ -1,4 +1,5 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using System.Data;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 
@@ -20,9 +21,9 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         {
             var sql = @"
                 INSERT INTO Inmueble 
-                (Direccion, Precio, Ambientes, Estado, Latitud, Longitud, Uso, Tipo, PropietarioId)
+                (Direccion, Precio, Ambientes, Estado, Latitud, Longitud, Uso, Tipo, PropietarioId, Portada)
                 VALUES 
-                (@direccion, @precio, @ambientes, @estado, @latitud, @longitud, @uso, @tipo, @propietarioId)
+                (@direccion, @precio, @ambientes, @estado, @latitud, @longitud, @uso, @tipo, @propietarioId, @portada)
                 RETURNING Id;";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
@@ -36,6 +37,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("@uso", inmueble.Uso.ToString());
                 cmd.Parameters.AddWithValue("@tipo", inmueble.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@propietarioId", inmueble.PropietarioId);
+                cmd.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(inmueble.Portada) ? (object)DBNull.Value : inmueble.Portada);
 
                 conn.Open();
                 var id = cmd.ExecuteScalar();
@@ -81,7 +83,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                     Longitud = @longitud,
                     Uso = @uso,
                     Tipo = @tipo,
-                    PropietarioId = @propietarioId
+                    PropietarioId = @propietarioId,
+                    Portada = @portada
                 WHERE Id = @id";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
@@ -95,6 +98,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("@uso", p.Uso.ToString());
                 cmd.Parameters.AddWithValue("@tipo", p.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@propietarioId", p.PropietarioId);
+                cmd.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(p.Portada) ? (object)DBNull.Value : p.Portada);
                 cmd.Parameters.AddWithValue("@id", p.Id);
 
                 conn.Open();
@@ -113,7 +117,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         {
             string sql = @"
             SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado,
-                   i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId,
+                   i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada,
                    p.Nombre, p.Apellido
             FROM Inmueble i
             INNER JOIN Propietario p ON i.PropietarioId = p.Id
@@ -138,10 +142,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             Uso = Enum.Parse<UsoInmueble>(reader.GetString(7)),
                             Tipo = Enum.Parse<TipoInmueble>(reader.GetString(8)),
                             PropietarioId = reader.GetInt32(9),
+                            Portada = reader.IsDBNull(10) ? null : reader.GetString(10),
                             Propietario = new Propietario
                             {
-                                Nombre = reader.GetString(10),
-                                Apellido = reader.GetString(11)
+                                Nombre = reader.GetString(11),
+                                Apellido = reader.GetString(12)
                             }
                         });
                     }
@@ -158,7 +163,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         using (var conn = new NpgsqlConnection(connectionString))
         {
             string sql = @"
-                SELECT Id, Direccion, Precio, Ambientes, Estado, Latitud, Longitud, Uso, Tipo, PropietarioId 
+                SELECT Id, Direccion, Precio, Ambientes, Estado, Latitud, Longitud, Uso, Tipo, PropietarioId, Portada
                 FROM Inmueble 
                 WHERE Id = @Id";
 
@@ -181,7 +186,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             Longitud = reader.GetDouble(6),
                             Uso = Enum.Parse<UsoInmueble>(reader.GetString(7)),
                             Tipo = Enum.Parse<TipoInmueble>(reader.GetString(8)),
-                            PropietarioId = reader.GetInt32(9)
+                            PropietarioId = reader.GetInt32(9),
+                            Portada = reader.IsDBNull(10) ? null : reader.GetString(10)
                         };
                     }
                 }
@@ -247,7 +253,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             }
 
             string sql = @"
-            SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, p.Nombre, p.Apellido 
+            SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido 
             FROM inmueble i
             INNER JOIN Propietario p ON i.PropietarioId = p.Id
             ORDER BY i.Id
@@ -267,7 +273,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                         {
                             Id = reader.GetInt32(0),
                             Direccion = reader.GetString(1),
-                            Precio = reader.GetInt32(2),
+                            Precio = reader.GetDecimal(2),
                             Ambientes = reader.GetInt32(3),
                             Estado = reader.GetBoolean(4),
                             Latitud = reader.GetDouble(5),
@@ -275,10 +281,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             Uso = Enum.Parse<UsoInmueble>(reader.GetString(7)),
                             Tipo = Enum.Parse<TipoInmueble>(reader.GetString(8)),
                             PropietarioId = reader.GetInt32(9),
+                            Portada = reader.IsDBNull(10) ? null : reader.GetString(10),
                             Propietario = new Propietario
                             {
-                                Nombre = reader.GetString(10),
-                                Apellido = reader.GetString(11)
+                                Nombre = reader.GetString(11),
+                                Apellido = reader.GetString(12)
                             }
                         });
                     }
@@ -294,5 +301,27 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             PageSize = tamPagina
         };
     }
+    public int ModificarPortada(int id, string url)
+    {
+        int res = -1;
+        using (var connection = new NpgsqlConnection(connectionString))
+        {
+            string sql = @"
+            UPDATE Inmueble SET
+            Portada = @portada
+            WHERE Id = @id";
+        
+            using (var command = new NpgsqlCommand(sql, connection))
+            {
+                command.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(url) ? (object)DBNull.Value : url);
+                command.Parameters.AddWithValue("@id", id);
+                command.CommandType = CommandType.Text;
+            
+                connection.Open();
+                res = command.ExecuteNonQuery();
+                connection.Close();
+            }
+        }
+        return res;
+    }
 }
-

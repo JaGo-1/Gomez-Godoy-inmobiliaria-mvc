@@ -38,4 +38,11 @@ public class Inmueble
     [ForeignKey(nameof(PropietarioId))]
     [BindNever]
     public Propietario? Propietario { get; set; }
+    
+    public string? Portada  { get; set; }
+    [NotMapped]
+    public IFormFile? PortadaFile { get; set; }
+
+    [ForeignKey(nameof(Imagen.InmuebleId))]
+    public IList<Imagen> Imagenes { get; set; } = new List<Imagen>();
 }

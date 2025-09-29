@@ -181,4 +181,63 @@ public class InmuebleController : Controller
 
         return tabla;
     }
+
+    public ActionResult Imagenes(int id, [FromServices] IRepositoryImagen repoImagen)
+    {
+        var entidad = repositorio.ObtenerPorId(id);
+        entidad.Imagenes = repoImagen.BuscarPorInmueble(id);
+        return View(entidad);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Portada(Imagen entidad, [FromServices] IWebHostEnvironment environment)
+    {
+        try
+        {
+            var inmueble = repositorio.ObtenerPorId(entidad.Id);
+            if (inmueble != null && inmueble.Portada != null)
+            {
+                string rutaEliminar = Path.Combine(environment.WebRootPath, "Uploads", "Inmuebles", Path.GetFileName(inmueble.Portada));
+                System.IO.File.Delete(rutaEliminar);
+            }
+
+            if (entidad.Archivo != null)
+            {
+                string wwwPath = environment.WebRootPath;
+                string path = Path.Combine(wwwPath, "Uploads");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                path = Path.Combine(path, "Inmuebles");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                string fileName = "portada_" + entidad.InmuebleId + Path.GetExtension(entidad.Archivo.FileName);
+                string rutaFisicaCompleta = Path.Combine(path, fileName);
+                using (var stream = new FileStream(rutaFisicaCompleta, FileMode.Create))
+                {
+                    entidad.Archivo.CopyTo(stream);
+                }
+                entidad.Url = Path.Combine("/Uploads/Inmuebles", fileName);
+            }
+            else
+            {
+                entidad.Url = string.Empty;
+            }
+
+            repositorio.ModificarPortada(entidad.InmuebleId, entidad.Url);
+            TempData["Mensaje"] = "Portada actualizada correctamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception e)
+        {
+            TempData["Error"] = e.Message;
+            return RedirectToAction(nameof(Imagenes), new { id = entidad.InmuebleId });
+        }
+    }
+
+
 }
