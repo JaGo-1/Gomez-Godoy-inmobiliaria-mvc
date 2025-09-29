@@ -1,0 +1,172 @@
+﻿@model inmobiliaria_mvc.ViewModels.InquilinoDetalleVM
+
+@{
+    ViewData["Title"] = "Detalles del Inquilino";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles del Inquilino</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nombre:</strong> @Model.Inquilino?.Nombre</p>
+                    <p><strong>Apellido:</strong> @Model.Inquilino?.Apellido</p>
+                    <p><strong>DNI:</strong> @Model.Inquilino?.Dni</p>
+                    <p><strong>Teléfono:</strong> @Model.Inquilino?.Telefono</p>
+                    <p><strong>Email:</strong> @Model.Inquilino?.Email</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Contratos Vigentes</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Contratos != null && Model.Contratos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Contrato</th>
+                                        <th>Inmueble</th>
+                                        <th>Precio</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Monto</th>
+                                        <th>Terminación</th>
+                                        <th>Multa</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var contrato in Model.Contratos)
+                                    {
+                                        <tr>
+                                            <td>@contrato.Id</td>
+                                            <td>@contrato.Inmueble?.Direccion</td>
+                                            <td>@contrato.Inmueble?.Precio.ToString("C")</td>
+                                            <td>@contrato.Fecha_inicio.ToShortDateString()</td>
+                                            <td>@contrato.Fecha_fin.ToShortDateString()</td>
+                                            <td>@contrato.Monto.ToString("C")</td>
+                                            <td>@(contrato.FechaTerminacionAnticipada?.ToShortDateString() ?? "-")</td>
+                                            <td>@(contrato.MultaCalculada?.ToString("C") ?? "-")</td>
+                                            <td>
+                                                @if (contrato.FechaTerminacionAnticipada == null)
+                                                {
+                                                    <a asp-controller="Contrato"
+                                                       asp-action="TerminarAnticipado"
+                                                       asp-route-id="@contrato.Id"
+                                                       class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-ban"></i> Anular
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Finalizado</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            Este inquilino no tiene contratos vigentes.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Pagos Asociados</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Mensaje != null)
+                    {
+                        <div class="alert alert-success">@ViewBag.Mensaje</div>
+                    }
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger">@ViewBag.Error</div>
+                    }
+
+                    @if (Model.Pagos != null && Model.Pagos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Contrato</th>
+                                        <th>Inmueble</th>
+                                        <th>Nº Pago</th>
+                                        <th>Fecha Esperada</th>
+                                        <th>Fecha Pago</th>
+                                        <th>Importe</th>
+                                        <th>Detalle</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pago in Model.Pagos.OrderBy(p => p.ContratoId).ThenBy(p => p.NumeroPago))
+                                    {
+                                        <tr>
+                                            <td>@pago.ContratoId</td>
+                                            <td>@pago.Contrato?.Inmueble?.Direccion</td>
+                                            <td>@pago.NumeroPago</td>
+                                            <td>@pago.FechaEsperada.ToShortDateString()</td>
+                                            <td>@(pago.FechaPago.HasValue ? pago.FechaPago.Value.ToShortDateString() : "Pendiente")</td>
+                                            <td>@pago.Importe.ToString("C")</td>
+                                            <td>@pago.Detalle</td>
+                                            <td>@(pago.Estado ? "Activo" : "Anulado")</td>
+                                            <td>
+                                                @if (pago.Estado && !pago.FechaPago.HasValue)
+                                                {
+                                                    <form asp-controller="Pago" asp-action="Registrar" method="post" style="display:inline;">
+                                                        <input type="hidden" name="contratoId" value="@pago.ContratoId" />
+                                                        <input type="hidden" name="numeroPago" value="@pago.NumeroPago" />
+                                                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Registrar Pago</button>
+                                                    </form>
+                                                }
+                                                <a asp-controller="Pago" asp-action="Edit" asp-route-id="@pago.IdPago" class="btn btn-warning btn-sm">Editar</a>
+                                                <a asp-controller="Pago" asp-action="Delete" asp-route-id="@pago.IdPago" class="btn btn-danger btn-sm">Eliminar</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No hay pagos registrados para este inquilino.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

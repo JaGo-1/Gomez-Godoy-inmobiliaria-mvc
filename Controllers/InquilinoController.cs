@@ -1,5 +1,7 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using inmobiliaria_mvc.Helpers;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace inmobiliaria_mvc.Controllers
@@ -7,46 +9,76 @@ namespace inmobiliaria_mvc.Controllers
     public class InquilinoController : Controller
     {
         private readonly IRepositoryInquilino repositorio;
+        private readonly IRepositoryContrato _repoContrato;
+        private readonly IRepositoryPago _repoPago;
         private readonly IConfiguration _config;
 
-        public InquilinoController(IRepositoryInquilino repo, IConfiguration config)
+        public InquilinoController(IRepositoryInquilino repo, IRepositoryContrato repoContrato, IRepositoryPago repoPago, IConfiguration config)
         {
-            this.repositorio = repo;
-            this._config = config;
+            repositorio = repo;
+            _repoContrato = repoContrato;
+            _repoPago = repoPago;
+            _config = config;
         }
 
-        public ActionResult Index(int page = 1, int pageSize = 5)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10)
         {
-            try
-            {
-                //var lista = repositorio.ObtenerTodos();
-                var inquilinos = repositorio.Paginar(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize);
+            return PartialView("_Tabla", tabla);
+        }
+
+        public ActionResult Index(int page = 1, int pageSize = 10)
+        {
+            var tabla = ConstruirTabla(page, pageSize);
+            if (TempData.ContainsKey("Id"))
                 ViewBag.Id = TempData["Id"];
-                if (TempData.ContainsKey("Mensaje"))
-                    ViewBag.Mensaje = TempData["Mensaje"];
-                return View(inquilinos);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            if (TempData.ContainsKey("Mensaje"))
+                ViewBag.Mensaje = TempData["Mensaje"];
+
+            return View(tabla);
         }
 
         public ActionResult Details(int id)
         {
             try
             {
-                var entidad = repositorio.ObtenerPorId(id);
-                if (entidad == null)
+                var inquilino = repositorio.ObtenerPorId(id);
+                if (inquilino == null)
                 {
                     TempData["Error"] = "Inquilino no encontrado.";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(entidad);
+
+                var contratos = _repoContrato.ObtenerTodos()
+                    .Where(c => c.IdInquilino == id && c.Estado)
+                    .ToList();
+
+                var pagos = new List<Pago>();
+                foreach (var contrato in contratos)
+                {
+                    var pagosContrato = _repoPago.ObtenerPorContrato(contrato.Id, incluirAnulados: true)
+                        .OrderBy(p => p.NumeroPago)
+                        .ToList();
+                    pagos.AddRange(pagosContrato);
+                }
+
+                var viewModel = new InquilinoDetalleVM
+                {
+                    Inquilino = inquilino,
+                    Contratos = contratos,
+                    Pagos = pagos
+                };
+
+                if (TempData.ContainsKey("Mensaje"))
+                    ViewBag.Mensaje = TempData["Mensaje"];
+                if (TempData.ContainsKey("Error"))
+                    ViewBag.Error = TempData["Error"];
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                throw;
+                TempData["Error"] = $"Error al obtener detalles del inquilino: {ex.Message}";
+                return RedirectToAction(nameof(Index));
             }
         }
 
@@ -179,6 +211,26 @@ namespace inmobiliaria_mvc.Controllers
                 TempData["Error"] = "Hubo un error al eliminar el inquilino.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize)
+        {
+            var lista = repositorio.Paginar(page, pageSize);
+            var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+            {
+                { "Código", l.IdInquilino },
+                { "DNI", l.Dni},
+                { "Nombre", $"{l.Nombre} {l.Apellido}"},
+                {"Teléfono", l.Telefono},
+                {"Email", l.Email},
+                { "Acciones", $@"
+                    <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Inquilino/Delete/{l.IdInquilino}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
+
+            return tabla;
         }
     }
 }

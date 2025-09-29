@@ -1,8 +1,8 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using inmobiliaria_mvc.Helpers;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace inmobiliaria_mvc.Controllers;
@@ -20,14 +20,22 @@ public class InmuebleController : Controller
         this.repoPropietario = repoPropietario;
     }
 
+    public ActionResult Filtrar(int page = 1, int pageSize = 10)
+    {
+        var tabla = ConstruirTabla(page, pageSize);
+        return PartialView("_Tabla", tabla);
+    }
+
     public ActionResult Index(int page = 1, int pageSize = 5)
     {
-        var lista = repositorio.Paginar(page, pageSize);
+        var tabla = ConstruirTabla(page, pageSize);
+
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
-        return View(lista);
+
+        return View(tabla);
     }
 
     public ActionResult Create()
@@ -150,6 +158,34 @@ public class InmuebleController : Controller
         }
     }
 
+    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize)
+    {
+        var lista = repositorio.Paginar(page, pageSize);
+
+        var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
+        {
+            { "Código", l.Id },
+            { "Dirección", l.Direccion },
+            { "Precio", l.Precio },
+            { "Ambientes", l.Ambientes },
+            { "Estado", l.Estado
+                ? "<span class='badge bg-success'>Disponible</span>"
+                : "<span class='badge bg-danger'>Inactivo</span>" },
+            { "Portada", !string.IsNullOrEmpty(l.Portada)
+            ? $"<img src='{l.Portada}' alt='Portada del inmueble' style='max-height:50px; max-width:50px; object-fit:cover; border-radius:4px;' />"
+            : "<span>Sin Portada</span>" },
+            { "Propietario", l.Propietario?.NombreCompleto },
+            { "Acciones", $@"
+                <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
+            " }
+        });
+
+        return tabla;
+    }
+
     public ActionResult Imagenes(int id, [FromServices] IRepositoryImagen repoImagen)
     {
         var entidad = repositorio.ObtenerPorId(id);
@@ -206,6 +242,6 @@ public class InmuebleController : Controller
             return RedirectToAction(nameof(Imagenes), new { id = entidad.InmuebleId });
         }
     }
-        
-    
+
+
 }

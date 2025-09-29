@@ -251,8 +251,7 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
-
-        public PagedResult<Contrato> Paginar(int pagina, int tamPagina)
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null, int? plazo = null)
         {
             var res = new List<Contrato>();
             int totalItems = 0;
@@ -260,26 +259,52 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 conn.Open();
-                string countSql = "SELECT COUNT (*) FROM contrato WHERE estado = true";
+
+                var whereConditions = new List<string>();
+
+                if (disponible.HasValue)
+                    whereConditions.Add("c.estado = @disponible");
+
+                if (plazo.HasValue)
+                    whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
+
+                string whereClause = whereConditions.Any()
+                    ? "WHERE " + string.Join(" AND ", whereConditions)
+                    : "";
+
+                // COUNT
+                string countSql = $"SELECT COUNT(*) FROM contrato c {whereClause}";
                 using (var countCmd = new NpgsqlCommand(countSql, conn))
                 {
+                    if (disponible.HasValue)
+                        countCmd.Parameters.AddWithValue("disponible", disponible.Value);
+
+                    if (plazo.HasValue)
+                        countCmd.Parameters.AddWithValue("plazo", plazo.Value);
+
                     totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
                 }
 
-                string sql = @"
-                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto
+                // SELECT
+                string sql = $@"
+                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto   
                 FROM contrato c
                 INNER JOIN inmueble i ON c.idinmueble = i.id
                 INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
-                WHERE c.estado = true
+                {whereClause}
                 ORDER BY c.id
-                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
-                ";
+                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("pagina", pagina);
                     cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    if (disponible.HasValue)
+                        cmd.Parameters.AddWithValue("disponible", disponible.Value);
+
+                    if (plazo.HasValue)
+                        cmd.Parameters.AddWithValue("plazo", plazo.Value);
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -304,8 +329,8 @@ namespace inmobiliaria_mvc.Repository
                         }
                     }
                 }
-                conn.Close();
             }
+
             return new PagedResult<Contrato>
             {
                 Items = res,
@@ -320,47 +345,72 @@ namespace inmobiliaria_mvc.Repository
             var contrato = ObtenerPorId(contratoId);
             if (contrato == null) return false;
 
-            var totalMeses = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
-            var mesesTranscurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
-            var esMenosDeMitad = mesesTranscurridos < totalMeses / 2.0;
-            var multaMeses = esMenosDeMitad ? 2 : 1;
-            var multaImporte = multaMeses * contrato.Monto;
-            contrato.MultaCalculada = multaImporte;
-            contrato.FechaTerminacionAnticipada = fechaTerminacion;
+            if (contrato.FechaTerminacionAnticipada.HasValue) return false;
 
+            contrato.MultaCalculada = CalcularMultaImporte(contrato, fechaTerminacion);
+            contrato.FechaTerminacionAnticipada = fechaTerminacion;
+            contrato.Fecha_fin = fechaTerminacion;
             Modificacion(contrato);
 
-            var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true);
-            var pagoPendiente = pagos.FirstOrDefault(p => p.Estado && p.Detalle.Contains("Pendiente"));
-            if (pagoPendiente != null)
+            var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true).ToList();
+            var pagosFuturos = pagos
+                .Where(p => p.FechaEsperada > fechaTerminacion && p.FechaPago == null && p.Estado)
+                .ToList();
+
+            foreach (var p in pagosFuturos)
             {
-                _repoPago.AnularPago(pagoPendiente.IdPago);
+                _repoPago.AnularPago(p.IdPago);
             }
 
-            if (pagarMultaAhora)
+            var existingMulta = pagos.FirstOrDefault(p => p.EsMulta);
+            if (existingMulta != null) return false;
+
+            var ultimoNumero = pagos.Any() ? pagos.Max(p => p.NumeroPago) : 0;
+            var pagoMulta = new Pago
             {
-                var ultimoNumero = pagos.Any() ? pagos.Max(p => p.NumeroPago) : 0;
-                var pagoMulta = new Pago
-                {
-                    ContratoId = contratoId,
-                    NumeroPago = ultimoNumero + 1,
-                    FechaEsperada = DateTime.Now,
-                    FechaPago = DateTime.Now,
-                    Importe = multaImporte,
-                    Detalle = $"Multa por terminación anticipada ({multaMeses} meses extra)",
-                    Estado = true
-                };
-                _repoPago.Alta(pagoMulta);
-            }
+                ContratoId = contratoId,
+                NumeroPago = ultimoNumero + 1,
+                FechaEsperada = fechaTerminacion,
+                FechaPago = pagarMultaAhora ? DateTime.Now : (DateTime?)null,
+                Importe = contrato.MultaCalculada ?? 0m,
+                Detalle = $"Multa por terminación anticipada ({CalcularMultaMeses(contrato, fechaTerminacion)} mes(es))",
+                Estado = true,
+                EsMulta = true
+            };
+            _repoPago.Alta(pagoMulta);
 
             return true;
         }
 
-        private int CalcularMesesContrato(DateTime inicio, DateTime fin)
+        public int CalcularMesesContrato(DateTime inicio, DateTime fin)
         {
             var meses = (fin.Year - inicio.Year) * 12 + fin.Month - inicio.Month;
             if (fin.Day < inicio.Day) meses--;
             return Math.Max(meses, 1);
+        }
+
+        public int CalcularMesesTranscurridos(Contrato contrato, DateTime fechaTerminacion)
+        {
+            return CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+        }
+
+        public int CalcularMesesAdeudados(Contrato contrato, DateTime fechaTerminacion)
+        {
+            var total = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            var transcurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+            return Math.Max(total - transcurridos, 0);
+        }
+
+        public int CalcularMultaMeses(Contrato contrato, DateTime fechaTerminacion)
+        {
+            var transcurridos = CalcularMesesContrato(contrato.Fecha_inicio, fechaTerminacion);
+            var total = CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
+            return transcurridos < total / 2.0 ? 2 : 1;
+        }
+
+        public decimal CalcularMultaImporte(Contrato contrato, DateTime fechaTerminacion)
+        {
+            return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
         }
     }
 }

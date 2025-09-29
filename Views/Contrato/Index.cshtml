@@ -1,5 +1,5 @@
 @using inmobiliaria_mvc.ViewModels
-@model PagedResult<Contrato>
+@model TablaViewModel<Contrato>
 
 @{
     ViewData["Title"] = "Contratos";
@@ -28,36 +28,70 @@
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
 </p>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Dirección</th>
-            <th>Inquilino</th>
-            <th>Monto</th>
-            <th>Fecha de inicio</th>
-            <th>Fecha de fin</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.Id)</td>
-                <td>@Html.DisplayFor(modelItem => item.Inmueble.Direccion)</td>
-                <td>@($"{item.Inquilino.Nombre} {item.Inquilino.Apellido}")</td>
-                <td>@Html.DisplayFor(modelItem => item.Monto)</td>
-                <td>@Html.DisplayFor(modelItem => item.Fecha_inicio)</td>
-                <td>@Html.DisplayFor(modelItem => item.Fecha_fin)</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@{
+    var disponible = ViewData["Disponible"] as bool?;
+    var opciones = new List<SelectListItem>
+{
+new SelectListItem { Text = "Todos", Value = "", Selected = disponible == null },
+new SelectListItem { Text = "Contratos vigentes", Value = "true", Selected = disponible == true },
+new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = disponible == false }
+};
+}
 
-<partial name="_Pagination" model="Model.ToObjectPagedResult()" />
+<!-- Filtros -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label>Disponibilidad</label>
+        <select id="filtro-disponible" class="form-select">
+            <option value="true" selected="@(disponible == true)">Vigentes</option>
+            <option value="false" selected="@(disponible == false)">Cancelados</option>
+            <option value="" selected="@(disponible == null)">-- Todos --</option>
+
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label>Plazo (días)</label>
+        <select id="filtro-plazo" class="form-select">
+            <option value="">-- Todos --</option>
+            <option value="30">30 días</option>
+            <option value="60">60 días</option>
+            <option value="90">90 días</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label>Plazo personalizado</label>
+        <input type="number" id="filtro-plazo-custom" class="form-control" placeholder="Ej: 45">
+    </div>
+</div>
+
+<!-- Tabla -->
+<div id="tabla-contratos">
+    <partial name="_Tabla" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaContratos = initTabla({
+                endpoint: "/Contrato/Filtrar",
+                containerId: "tabla-contratos",
+                extraParamsFn: () => {
+                    const disponible = document.getElementById("filtro-disponible")?.value || "";
+                    const plazoSelect = document.getElementById("filtro-plazo")?.value || "";
+                    const plazoCustom = document.getElementById("filtro-plazo-custom")?.value || "";
+                    return { disponible, plazo: plazoCustom || plazoSelect };
+                }
+            });
+
+            // Filtros
+            document.getElementById("filtro-disponible")?.addEventListener("change", () => tablaContratos.init(1));
+            document.getElementById("filtro-plazo")?.addEventListener("change", () => tablaContratos.init(1));
+            document.getElementById("filtro-plazo-custom")?.addEventListener("input", () => tablaContratos.init(1));
+
+            tablaContratos.init(1);
+        });
+    </script>
+}

@@ -1,3 +1,4 @@
+using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
@@ -22,13 +23,20 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         // GET: Propietario
-        public ActionResult Index(int page = 1, int pageSize = 5)
-        {
-            //var propietarios = _repo.ObtenerTodos();
-            var propietarios = _repo.Paginar(page, pageSize);
-            if (TempData.ContainsKey("Mensaje")) ViewBag.Mensaje = TempData["Mensaje"];
-            return View(propietarios);
 
+        public ActionResult Filtrar(int page = 1, int pageSize = 10)
+        {
+            var tabla = ConstruirTabla(page, pageSize);
+            return PartialView("_Tabla", tabla);
+        }
+        public ActionResult Index(int page = 1, int pageSize = 10)
+        {
+            var tabla = ConstruirTabla(page, pageSize);
+
+            if (TempData.ContainsKey("Mensaje"))
+                ViewBag.Mensaje = TempData["Mensaje"];
+
+            return View(tabla);
         }
 
         //GET: Propietarios/Obtener/:id
@@ -186,5 +194,26 @@ namespace inmobiliaria_mvc.Controllers
                 throw;
             }
         }
+
+        private TablaViewModel<Propietario> ConstruirTabla(int page, int pageSize)
+        {
+            var propietarios = _repo.Paginar(page, pageSize);
+            var tabla = TablaHelper.MapToTablaViewModel(propietarios, p => new Dictionary<string, object>
+            {
+                { "Código", p.Id },
+                { "DNI", p.Dni},
+                { "Nombre", $"{p.Nombre} {p.Apellido}"},
+                {"Teléfono", p.Telefono},
+                {"Email", p.Email},
+                { "Acciones", $@"
+                    <a href='/Propietario/Details/{p.Id}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Propietario/Edit/{p.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Propietario/Delete/{p.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
+
+            return tabla;
+        }
+
     }
 }

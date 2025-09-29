@@ -21,19 +21,16 @@ namespace inmobiliaria_mvc.Controllers
         public ActionResult Index()
         {
             var contratos = _repoContrato.ObtenerTodos();
-            var pendientes = new List<Pago>();
+            var todosLosPagos = new List<Pago>();
 
             foreach (var contrato in contratos)
             {
-                var pagoPendiente = _repositorio.ObtenerPorContrato(contrato.Id)
-                    .Where(p => p.Estado && p.Detalle.Contains("Pendiente"))
-                    .OrderBy(p => p.NumeroPago)
-                    .FirstOrDefault();
+                var pagos = _repositorio.ObtenerPorContrato(contrato.Id, true).ToList();
 
-                if (pagoPendiente != null)
+                foreach (var pago in pagos)
                 {
-                    pagoPendiente.Contrato = contrato;
-                    pendientes.Add(pagoPendiente);
+                    pago.Contrato = contrato;
+                    todosLosPagos.Add(pago);
                 }
             }
 
@@ -41,8 +38,10 @@ namespace inmobiliaria_mvc.Controllers
                 ViewBag.Mensaje = TempData["Mensaje"];
             if (TempData.ContainsKey("Error"))
                 ViewBag.Error = TempData["Error"];
-            return View(pendientes);
+
+            return View(todosLosPagos);
         }
+
 
         public ActionResult Details(int id)
         {
@@ -206,17 +205,29 @@ namespace inmobiliaria_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            pagoPendiente.Detalle = detalle ?? $"Mes {numeroPago} - Pagado ({DateTime.Now:dd/MM/yyyy})";
+            pagoPendiente.Detalle = detalle ?? (pagoPendiente.EsMulta 
+                ? $"Multa por terminación anticipada - Pagada ({DateTime.Now:dd/MM/yyyy})" 
+                : $"Mes {numeroPago} - Pagado ({DateTime.Now:dd/MM/yyyy})");
             pagoPendiente.FechaPago = DateTime.Now;
 
             _repositorio.Modificacion(pagoPendiente, esRegistroReal: true);
 
-            var siguienteId = _repositorio.CrearSiguientePagoSiAplica(contratoId, numeroPago, contrato.Monto, contrato.Fecha_inicio, contrato.Fecha_fin);
-            TempData["Mensaje"] = siguienteId.HasValue 
-                ? $"Pago registrado correctamente. Siguiente pago creado (Mes {numeroPago + 1})."
-                : "Pago registrado correctamente. Contrato completado.";
+            if (pagoPendiente.EsMulta)
+            {
+                contrato.MultaCalculada = null;
+                _repoContrato.Modificacion(contrato);
+                TempData["Mensaje"] = "Multa registrada como pagada correctamente.";
+            }
+            else
+            {
+                var siguienteId = _repositorio.CrearSiguientePagoSiAplica(contratoId, numeroPago, contrato.Monto, contrato.Fecha_inicio, contrato.Fecha_fin);
+                TempData["Mensaje"] = siguienteId.HasValue 
+                    ? $"Pago registrado correctamente. Siguiente pago creado (Mes {numeroPago + 1})."
+                    : "Pago registrado correctamente. Contrato completado.";
+            }
 
             return RedirectToAction(nameof(Details), new { id = pagoPendiente.IdPago });
+
         }
     }
 }

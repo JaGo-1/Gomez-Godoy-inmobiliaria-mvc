@@ -1,5 +1,5 @@
 ﻿@using inmobiliaria_mvc.ViewModels
-@model PagedResult<Inquilino>
+@model TablaViewModel<Inquilino>
 
 @{
     ViewData["Title"] = "Lista de Inquilinos";
@@ -28,34 +28,20 @@
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Inquilino</a>
 </p>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Dni</th>
-            <th>Nombre</th>
-            <th>Teléfono</th>
-            <th>Email</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.IdInquilino)</td>
-                <td>@Html.DisplayFor(modelItem => item.Dni)</td>
-                <td>@Html.DisplayFor(modelItem => item.NombreCompleto)</td>
-                <td>@Html.DisplayFor(modelItem => item.Telefono)</td>
-                <td>@Html.DisplayFor(modelItem => item.Email)</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.IdInquilino" class="btn btn-info btn-sm">Detalles</a>
-                    <a asp-action="Edit" asp-route-id="@item.IdInquilino" class="btn btn-warning btn-sm">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.IdInquilino" class="btn btn-danger btn-sm">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div id="tabla-inquilino">
+    <partial name="_Tabla" model="Model" />
+</div>
 
-<partial name="_Pagination" model="Model.ToObjectPagedResult()" />
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaInquilino = initTabla({
+                endpoint: "/Inquilino/Filtrar",
+                containerId: "tabla-inquilino"
+            });
+
+            tablaInquilino.init(1);
+        });
+    </script>
+}

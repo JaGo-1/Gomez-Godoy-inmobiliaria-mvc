@@ -1,12 +1,33 @@
-@using inmobiliaria_mvc.ViewModels
-@model PagedResult<object>
+@model dynamic
+
+<table class="table">
+    <thead>
+        <tr>
+            @foreach (var col in Model.Columnas)
+            {
+                <th>@col</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var fila in Model.Filas)
+        {
+            <tr>
+                @foreach (var valor in fila.Values)
+                {
+                    <td>@Html.Raw(valor)</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
 
 @if (Model.TotalPages > 1)
 {
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
-                <a class="page-link pagination-link" href="#" data-page="@(Model.PageNumber - 1)">
+                <a href="#" class="page-link" data-page="@(Model.PageNumber - 1)">
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
             </li>
@@ -18,7 +39,7 @@
             </li>
 
             <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link pagination-link" href="#" data-page="@(Model.PageNumber + 1)">
+                <a href="#" class="page-link" data-page="@(Model.PageNumber + 1)">
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
             </li>

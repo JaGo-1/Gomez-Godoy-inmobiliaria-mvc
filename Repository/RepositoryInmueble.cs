@@ -2,7 +2,6 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.ViewModels;
 using Npgsql;
-using Npgsql.Internal;
 
 namespace inmobiliaria_mvc.Repository;
 
@@ -257,7 +256,6 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido 
             FROM inmueble i
             INNER JOIN Propietario p ON i.PropietarioId = p.Id
-            WHERE i.Estado = true
             ORDER BY i.Id
             LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
             ";
