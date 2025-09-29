@@ -171,11 +171,15 @@ public class InmuebleController : Controller
             { "Estado", l.Estado
                 ? "<span class='badge bg-success'>Disponible</span>"
                 : "<span class='badge bg-danger'>Inactivo</span>" },
+            { "Portada", !string.IsNullOrEmpty(l.Portada)
+            ? $"<img src='{l.Portada}' alt='Portada del inmueble' style='max-height:50px; max-width:50px; object-fit:cover; border-radius:4px;' />"
+            : "<span>Sin Portada</span>" },
             { "Propietario", l.Propietario?.NombreCompleto },
             { "Acciones", $@"
                 <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
                 <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
                 <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
             " }
         });
 
