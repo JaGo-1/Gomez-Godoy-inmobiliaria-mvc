@@ -84,6 +84,16 @@ namespace inmobiliaria_mvc.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
                 }
+
+                if (contrato.Fecha_inicio <= DateTime.Today && contrato.Fecha_fin >= DateTime.Today)
+                {
+                    contrato.Estado = true;
+                }
+                else
+                {
+                    contrato.Estado = false;
+                }
+
                 if (ModelState.IsValid)
                 {
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
@@ -317,19 +327,21 @@ namespace inmobiliaria_mvc.Controllers
             var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
 
             var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
-        {
-            { "Código", c.Id },
-            { "Dirección", c.Inmueble.Direccion },
-            { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
-            { "Monto", c.Monto },
-            { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
-            { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-            { "Acciones", $@"
-                <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
-                <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-            " }
-        });
+            {
+                { "Código", c.Id },
+                { "Dirección", c.Inmueble.Direccion },
+                { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
+                { "Monto", c.Monto },
+                { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
+                { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
+                { "Estado", c.Estado ? "<span class='badge bg-success'>Vigente</span>"
+                : "<span class='badge bg-danger'>Inactivo</span>"  },
+                { "Acciones", $@"
+                    <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
+                    <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
 
             return tabla;
         }

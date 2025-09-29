@@ -34,7 +34,7 @@
 {
 new SelectListItem { Text = "Todos", Value = "", Selected = disponible == null },
 new SelectListItem { Text = "Contratos vigentes", Value = "true", Selected = disponible == true },
-new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = disponible == false }
+new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = disponible == false }
 };
 }
 
@@ -44,7 +44,7 @@ new SelectListItem { Text = "Contratos cancelados", Value = "false", Selected = 
         <label>Disponibilidad</label>
         <select id="filtro-disponible" class="form-select">
             <option value="true" selected="@(disponible == true)">Vigentes</option>
-            <option value="false" selected="@(disponible == false)">Cancelados</option>
+            <option value="false" selected="@(disponible == false)">Inactivos</option>
             <option value="" selected="@(disponible == null)">-- Todos --</option>
 
         </select>
