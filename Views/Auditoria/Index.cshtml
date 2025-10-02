@@ -1,0 +1,35 @@
+@using inmobiliaria_mvc.ViewModels
+@model TablaViewModel<Auditoria>
+
+@{
+    ViewData["Title"] = "Auditoria";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (ViewBag.Mensaje != null)
+{
+    <div class="alert alert-success">@ViewBag.Mensaje</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div id="tabla-auditoria">
+    <partial name="_Tabla" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaAuditoria = initTabla({
+                endpoint: "/Auditoria/Filtrar",
+                containerId: "tabla-auditoria"
+            });
+
+            tablaInmuebles.init(1);
+        });
+    </script>
+}

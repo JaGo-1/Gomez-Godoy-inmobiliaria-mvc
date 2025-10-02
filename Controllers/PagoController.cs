@@ -1,5 +1,8 @@
-﻿using inmobiliaria_mvc.Models;
+﻿using System.Security.Claims;
+using System.Text.Json;
+using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -9,12 +12,14 @@ namespace inmobiliaria_mvc.Controllers
     {
         private readonly IRepositoryPago _repositorio;
         private readonly IRepositoryContrato _repoContrato;
+        private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
 
-        public PagoController(IRepositoryPago repo, IRepositoryContrato repoContrato, IConfiguration config)
+        public PagoController(IRepositoryPago repo, IRepositoryContrato repoContrato, IAuditoriaService auditoriaService, IConfiguration config)
         {
             _repositorio = repo;
             _repoContrato = repoContrato;
+            _auditoriaService = auditoriaService;
             _config = config;
         }
 
@@ -108,6 +113,18 @@ namespace inmobiliaria_mvc.Controllers
             if (ModelState.IsValid)
             {
                 _repositorio.Alta(pago);
+
+                //Auditoria
+                int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                _auditoriaService.RegistrarCambio(
+                    entidad: "Pago",
+                    entidadId: pago.IdPago,
+                    accion: "Alta",
+                    usuarioId: usuarioId,
+                    datosAnteriores: "",
+                    datosNuevos: pago
+                );
+
                 TempData["Id"] = pago.IdPago;
                 TempData["Mensaje"] = "Pago registrado correctamente.";
                 return RedirectToAction(nameof(Index));
@@ -153,8 +170,22 @@ namespace inmobiliaria_mvc.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                var pagoAnterior = JsonSerializer.Deserialize<Pago>(JsonSerializer.Serialize(pagoExistente));
+
                 pagoExistente.Detalle = pago.Detalle;
                 _repositorio.Modificacion(pagoExistente, esRegistroReal: false);
+
+                //Auditoria
+                int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                _auditoriaService.RegistrarCambio(
+                    entidad: "Pago",
+                    entidadId: pago.IdPago,
+                    accion: "Modificación",
+                    usuarioId: usuarioId,
+                    datosAnteriores: pagoAnterior,
+                    datosNuevos: pago
+                );
+
                 TempData["Mensaje"] = "Detalle actualizado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -205,8 +236,8 @@ namespace inmobiliaria_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            pagoPendiente.Detalle = detalle ?? (pagoPendiente.EsMulta 
-                ? $"Multa por terminación anticipada - Pagada ({DateTime.Now:dd/MM/yyyy})" 
+            pagoPendiente.Detalle = detalle ?? (pagoPendiente.EsMulta
+                ? $"Multa por terminación anticipada - Pagada ({DateTime.Now:dd/MM/yyyy})"
                 : $"Mes {numeroPago} - Pagado ({DateTime.Now:dd/MM/yyyy})");
             pagoPendiente.FechaPago = DateTime.Now;
 
@@ -221,7 +252,7 @@ namespace inmobiliaria_mvc.Controllers
             else
             {
                 var siguienteId = _repositorio.CrearSiguientePagoSiAplica(contratoId, numeroPago, contrato.Monto, contrato.Fecha_inicio, contrato.Fecha_fin);
-                TempData["Mensaje"] = siguienteId.HasValue 
+                TempData["Mensaje"] = siguienteId.HasValue
                     ? $"Pago registrado correctamente. Siguiente pago creado (Mes {numeroPago + 1})."
                     : "Pago registrado correctamente. Contrato completado.";
             }

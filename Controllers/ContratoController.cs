@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.Services;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -15,15 +17,17 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryInmueble _repoInmueble;
         private readonly IRepositoryInquilino _repoInquilino;
         private readonly IRepositoryPago _repoPago;
+        private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
 
-        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IConfiguration config)
+        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IAuditoriaService auditoriaService, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
             _repoInmueble = repoInmueble;
             _repoInquilino = repoInquilino;
             _repoPago = repoPago;
+            _auditoriaService = auditoriaService;
             _config = config;
         }
 
@@ -99,6 +103,18 @@ namespace inmobiliaria_mvc.Controllers
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
                     {
                         _repo.Alta(contrato);
+
+                        //Auditoria
+                        int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                        _auditoriaService.RegistrarCambio(
+                            entidad: "Contrato",
+                            entidadId: contrato.Id,
+                            accion: "Alta",
+                            usuarioId: usuarioId,
+                            datosAnteriores: "",
+                            datosNuevos: contrato
+                        );
+
                         TempData["Mensaje"] = "Contrato creado correctamente.";
                         return RedirectToAction(nameof(Index));
                     }
@@ -149,6 +165,18 @@ namespace inmobiliaria_mvc.Controllers
                 if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
                 {
                     _repo.Alta(contrato);
+
+                    //Auditoria
+                    int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                    _auditoriaService.RegistrarCambio(
+                        entidad: "Contrato",
+                        entidadId: contrato.Id,
+                        accion: "Alta",
+                        usuarioId: usuarioId,
+                        datosAnteriores: "",
+                        datosNuevos: contrato
+                    );
+
                     TempData["Mensaje"] = "Contrato renovado correctamente.";
                     return RedirectToAction(nameof(Index));
                 }
@@ -200,6 +228,18 @@ namespace inmobiliaria_mvc.Controllers
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin, id))
                     {
                         _repo.Modificacion(contrato);
+
+                        //Auditoria
+                        int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                        _auditoriaService.RegistrarCambio(
+                            entidad: "Contrato",
+                            entidadId: contrato.Id,
+                            accion: "Modificación",
+                            usuarioId: usuarioId,
+                            datosAnteriores: "",
+                            datosNuevos: contrato
+                        );
+
                         TempData["Mensaje"] = "Contrato modificado correctamente.";
                         return RedirectToAction(nameof(Index));
                     }

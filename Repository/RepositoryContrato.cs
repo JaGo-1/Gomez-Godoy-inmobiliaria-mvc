@@ -17,7 +17,6 @@ namespace inmobiliaria_mvc.Repository
 
         public int Alta(Contrato p)
         {
-            int res = -1;
             int contratoId = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
@@ -38,7 +37,7 @@ namespace inmobiliaria_mvc.Repository
                     if (id != null)
                     {
                         contratoId = Convert.ToInt32(id);
-                        res = 1;
+                        p.Id = contratoId;
                     }
                     conn.Close();
                 }
@@ -48,7 +47,7 @@ namespace inmobiliaria_mvc.Repository
                     _repoPago.GenerarPrimerPagoParaContrato(contratoId, p.Monto, p.Fecha_inicio);
                 }
             }
-            return res;
+            return contratoId;
         }
 
         public int Baja(int id)
