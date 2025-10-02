@@ -101,3 +101,15 @@ CREATE TABLE Usuario (
                           rol INTEGER NOT NULL
 );
 CREATE UNIQUE INDEX idx_usuarios_email ON Usuario (email);
+
+
+CREATE TABLE Auditoria (
+    id SERIAL PRIMARY KEY,
+    entidad VARCHAR(100) NOT NULL,          
+    entidad_id INT NOT NULL,               
+    accion VARCHAR(50) NOT NULL,           
+    usuario_id INT NOT NULL,             
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    datos_anteriores JSONB,                 
+    datos_nuevos JSONB                      
+);

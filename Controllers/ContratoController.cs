@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.Services;
 using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -15,15 +17,17 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryInmueble _repoInmueble;
         private readonly IRepositoryInquilino _repoInquilino;
         private readonly IRepositoryPago _repoPago;
+        private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
 
-        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IConfiguration config)
+        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IAuditoriaService auditoriaService, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
             _repoInmueble = repoInmueble;
             _repoInquilino = repoInquilino;
             _repoPago = repoPago;
+            _auditoriaService = auditoriaService;
             _config = config;
         }
 
@@ -84,11 +88,33 @@ namespace inmobiliaria_mvc.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
                 }
+
+                if (contrato.Fecha_inicio <= DateTime.Today && contrato.Fecha_fin >= DateTime.Today)
+                {
+                    contrato.Estado = true;
+                }
+                else
+                {
+                    contrato.Estado = false;
+                }
+
                 if (ModelState.IsValid)
                 {
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
                     {
                         _repo.Alta(contrato);
+
+                        //Auditoria
+                        int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                        _auditoriaService.RegistrarCambio(
+                            entidad: "Contrato",
+                            entidadId: contrato.Id,
+                            accion: "Alta",
+                            usuarioId: usuarioId,
+                            datosAnteriores: "",
+                            datosNuevos: contrato
+                        );
+
                         TempData["Mensaje"] = "Contrato creado correctamente.";
                         return RedirectToAction(nameof(Index));
                     }
@@ -139,6 +165,18 @@ namespace inmobiliaria_mvc.Controllers
                 if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin))
                 {
                     _repo.Alta(contrato);
+
+                    //Auditoria
+                    int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                    _auditoriaService.RegistrarCambio(
+                        entidad: "Contrato",
+                        entidadId: contrato.Id,
+                        accion: "Alta",
+                        usuarioId: usuarioId,
+                        datosAnteriores: "",
+                        datosNuevos: contrato
+                    );
+
                     TempData["Mensaje"] = "Contrato renovado correctamente.";
                     return RedirectToAction(nameof(Index));
                 }
@@ -190,6 +228,18 @@ namespace inmobiliaria_mvc.Controllers
                     if (!_repo.ExisteSolapado(contrato.IdInmueble, contrato.Fecha_inicio, contrato.Fecha_fin, id))
                     {
                         _repo.Modificacion(contrato);
+
+                        //Auditoria
+                        int usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                        _auditoriaService.RegistrarCambio(
+                            entidad: "Contrato",
+                            entidadId: contrato.Id,
+                            accion: "Modificación",
+                            usuarioId: usuarioId,
+                            datosAnteriores: "",
+                            datosNuevos: contrato
+                        );
+
                         TempData["Mensaje"] = "Contrato modificado correctamente.";
                         return RedirectToAction(nameof(Index));
                     }
@@ -317,19 +367,21 @@ namespace inmobiliaria_mvc.Controllers
             var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
 
             var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
-        {
-            { "Código", c.Id },
-            { "Dirección", c.Inmueble.Direccion },
-            { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
-            { "Monto", c.Monto },
-            { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
-            { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-            { "Acciones", $@"
-                <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
-                <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-            " }
-        });
+            {
+                { "Código", c.Id },
+                { "Dirección", c.Inmueble.Direccion },
+                { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
+                { "Monto", c.Monto },
+                { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
+                { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
+                { "Estado", c.Estado ? "<span class='badge bg-success'>Vigente</span>"
+                : "<span class='badge bg-danger'>Inactivo</span>"  },
+                { "Acciones", $@"
+                    <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
+                    <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                " }
+            });
 
             return tabla;
         }

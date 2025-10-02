@@ -17,7 +17,6 @@ namespace inmobiliaria_mvc.Repository
 
         public int Alta(Contrato p)
         {
-            int res = -1;
             int contratoId = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
@@ -31,24 +30,24 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_inicio", p.Fecha_inicio);
                     cmd.Parameters.AddWithValue("@fecha_fin", p.Fecha_fin);
                     cmd.Parameters.AddWithValue("@monto", p.Monto);
-                    cmd.Parameters.AddWithValue("@estado", true);
+                    cmd.Parameters.AddWithValue("@estado", p.Estado);
 
                     conn.Open();
                     var id = cmd.ExecuteScalar();
                     if (id != null)
                     {
                         contratoId = Convert.ToInt32(id);
-                        res = 1;
+                        p.Id = contratoId;
                     }
                     conn.Close();
                 }
 
-                if (contratoId > 0)
+                if (contratoId > 0 && p.Estado == true)
                 {
                     _repoPago.GenerarPrimerPagoParaContrato(contratoId, p.Monto, p.Fecha_inicio);
                 }
             }
-            return res;
+            return contratoId;
         }
 
         public int Baja(int id)
@@ -287,7 +286,7 @@ namespace inmobiliaria_mvc.Repository
 
                 // SELECT
                 string sql = $@"
-                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto   
+                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto, c.estado   
                 FROM contrato c
                 INNER JOIN inmueble i ON c.idinmueble = i.id
                 INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
@@ -324,7 +323,8 @@ namespace inmobiliaria_mvc.Repository
                                 },
                                 Fecha_inicio = reader.GetDateTime(4),
                                 Fecha_fin = reader.GetDateTime(5),
-                                Monto = reader.GetInt32(6)
+                                Monto = reader.GetInt32(6),
+                                Estado = reader.GetBoolean(7)
                             });
                         }
                     }

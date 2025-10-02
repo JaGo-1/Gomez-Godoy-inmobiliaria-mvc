@@ -117,7 +117,7 @@ public class UsuarioController : Controller
         return View(u);
     }
 
-// POST: Usuarios/Edit/5
+    // POST: Usuarios/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize]
@@ -141,7 +141,7 @@ public class UsuarioController : Controller
                 usuarioDb.Nombre = u.Nombre;
                 usuarioDb.Apellido = u.Apellido;
                 usuarioDb.Email = u.Email;
-                
+
                 if (User.IsInRole("Administrador"))
                 {
                     usuarioDb.Rol = u.Rol;
@@ -157,7 +157,7 @@ public class UsuarioController : Controller
                         numBytesRequested: 256 / 8));
                     usuarioDb.Password = hashed;
                 }
-                
+
                 if (u.AvatarFile != null)
                 {
                     string wwwPath = environment.WebRootPath;
@@ -175,7 +175,7 @@ public class UsuarioController : Controller
                         u.AvatarFile.CopyTo(stream);
                     }
                 }
-                
+
                 repository.Modificacion(usuarioDb);
                 TempData["Mensaje"] = "Datos guardados correctamente.";
             }
@@ -347,6 +347,7 @@ public class UsuarioController : Controller
                     new Claim(ClaimTypes.Name, e.Email),
                     new Claim("FullName", e.Nombre + " " + e.Apellido),
                     new Claim(ClaimTypes.Role, e.RolNombre),
+                    new Claim(ClaimTypes.NameIdentifier, e.Id.ToString())
                 };
 
                 var claimsIdentity = new ClaimsIdentity(
@@ -377,7 +378,7 @@ public class UsuarioController : Controller
             CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index", "Home");
     }
-    
+
     [AllowAnonymous]
     public string GetTestHash(string password)
     {
