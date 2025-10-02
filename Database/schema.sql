@@ -111,5 +111,6 @@ CREATE TABLE Auditoria (
     usuario_id INT NOT NULL,             
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     datos_anteriores JSONB,                 
-    datos_nuevos JSONB                      
+    datos_nuevos JSONB,
+    estado BOOLEAN DEFAULT TRUE                     
 );
