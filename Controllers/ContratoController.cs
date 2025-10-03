@@ -262,23 +262,6 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        //GET: Contrato/Delete
-        public ActionResult Delete(int id)
-        {
-            try
-            {
-                _repo.Baja(id);
-                TempData["Mensaje"] = "Eliminación realizada correctamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Hubo un error al eliminar el contrato.";
-                _logger.LogError(ex, "Error al eliminar contrato: Delete()" + ex.Message);
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
         //POST: Contrato/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -379,7 +362,14 @@ namespace inmobiliaria_mvc.Controllers
                 { "Acciones", $@"
                     <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
                     <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Contrato/Delete/{c.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                    <a class='btn btn-danger btn-sm' 
+                        data-bs-toggle='modal' 
+                        data-bs-target='#confirmDeleteModal' 
+                        data-url='/Contrato/Delete/' 
+                        data-id='{c.Id}' 
+                        data-descripcion='Contrato de {c.Inquilino.Nombre} {c.Inquilino.Apellido} - {c.Inmueble.Direccion}'>
+                        Eliminar
+                        </a>
                 " }
             });
 
