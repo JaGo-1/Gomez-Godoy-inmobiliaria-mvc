@@ -71,11 +71,7 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
     <partial name="_Tabla" model="Model" />
 </div>
 
-@* Modal de confirmacion de eliminacion *@
-<partial name="_ConfirmDeleteModal" />
-
 @section Scripts {
-    <script src="~/js/modal.js"></script>
     <script src="~/js/tabla.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {

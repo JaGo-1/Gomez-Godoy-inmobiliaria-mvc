@@ -362,14 +362,7 @@ namespace inmobiliaria_mvc.Controllers
                 { "Acciones", $@"
                     <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
                     <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a class='btn btn-danger btn-sm' 
-                        data-bs-toggle='modal' 
-                        data-bs-target='#confirmDeleteModal' 
-                        data-url='/Contrato/Delete/' 
-                        data-id='{c.Id}' 
-                        data-descripcion='Contrato de {c.Inquilino.Nombre} {c.Inquilino.Apellido} - {c.Inmueble.Direccion}'>
-                        Eliminar
-                        </a>
+                    {BotonHelper.BotonEliminar("Contrato", c.Id, $"Contrato del inmueble {c.Inmueble.Direccion} - Inquilino {c.Inquilino.Nombre} {c.Inquilino.Apellido}")}
                 " }
             });
 

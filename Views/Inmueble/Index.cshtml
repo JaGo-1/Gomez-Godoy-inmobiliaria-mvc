@@ -19,7 +19,7 @@
 <form asp-action="Index" method="get" class="mb-3">
     <div class="input-group">
         <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario"
-            value="@ViewData["Termino"]" />
+            value="@ViewData[index: "Termino"]" />
         <button type="submit" class="btn btn-primary">Buscar</button>
     </div>
 </form>
@@ -28,11 +28,9 @@
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Inmueble</a>
 </p>
 
-
 <div id="tabla-inmueble">
     <partial name="_Tabla" model="Model" />
 </div>
-
 
 @section Scripts {
     <script src="~/js/tabla.js"></script>

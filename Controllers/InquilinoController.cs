@@ -162,43 +162,9 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        public ActionResult Delete1(int id)
-        {
-            try
-            {
-                var entidad = repositorio.ObtenerPorId(id);
-                if (entidad == null)
-                {
-                    TempData["Error"] = "Inquilino no encontrado para eliminación.";
-                    return RedirectToAction(nameof(Index));
-                }
-                return View(entidad);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        public ActionResult Delete(int id)
-        {
-            try
-            {
-                repositorio.Baja(id);
-                TempData["Mensaje"] = "Eliminación realizada correctamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Hubo un error al eliminar el inquilino.";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult Delete(int id)
         {
             try
             {
@@ -226,7 +192,7 @@ namespace inmobiliaria_mvc.Controllers
                 { "Acciones", $@"
                     <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
                     <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Inquilino/Delete/{l.IdInquilino}' class='btn btn-danger btn-sm'>Eliminar</a>
+                    {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}
                 " }
             });
 

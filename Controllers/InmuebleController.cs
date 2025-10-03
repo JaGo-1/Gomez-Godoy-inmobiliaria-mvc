@@ -126,24 +126,9 @@ public class InmuebleController : Controller
         }
     }
 
-    public ActionResult Delete(int id)
-    {
-        try
-        {
-            repositorio.Baja(id);
-            TempData["Mensaje"] = "Eliminación realizada correctamente.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch
-        {
-            TempData["Error"] = "Hubo un error al eliminar el Inmueble.";
-            return RedirectToAction(nameof(Index));
-        }
-    }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult Delete(int id, IFormCollection collection)
+    public ActionResult Delete(int id)
     {
         try
         {
@@ -178,7 +163,7 @@ public class InmuebleController : Controller
             { "Acciones", $@"
                 <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
                 <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                {BotonHelper.BotonEliminar("Inmueble", l.Id, $"Inmueble {l.Direccion}")}
                 <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
             " }
         });

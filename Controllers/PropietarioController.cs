@@ -161,26 +161,10 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        //GET: Propietario/Delete/:id
-        public ActionResult Delete(int id)
-        {
-            try
-            {
-                _repo.Baja(id);
-                TempData["Mensaje"] = "Eliminación realizada correctamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Hubo un error al eliminar el propietario.";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
         //POST: Propietario/Delete/:id
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, Propietario propietario)
+        public ActionResult Delete(int id)
         {
             try
             {
@@ -208,7 +192,7 @@ namespace inmobiliaria_mvc.Controllers
                 { "Acciones", $@"
                     <a href='/Propietario/Details/{p.Id}' class='btn btn-info btn-sm'>Detalles</a>
                     <a href='/Propietario/Edit/{p.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Propietario/Delete/{p.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+                    {BotonHelper.BotonEliminar("Propietario", p.Id, $"Propietario {p.Nombre} {p.Apellido}")}
                 " }
             });
 
