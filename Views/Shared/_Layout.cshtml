@@ -4,96 +4,99 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - inmobiliaria_mvc</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <div class="sidebar">
-        <div class="logo">Inmobiliaria</div>
-        <nav>
+<div class="sidebar">
+    <div class="logo">Inmobiliaria</div>
+    <nav>
+        @if (User.Identity.IsAuthenticated)
+        {
+            <a asp-controller="Home" asp-action="Index"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a asp-controller="Inquilino" asp-action="Index"><i
+                    class="fa-solid fa-users"></i><span>Inquilinos</span></a>
+            <a asp-controller="Propietario" asp-action="Index"><i
+                    class="fa-solid fa-key"></i><span>Propietarios</span></a>
+            <a asp-controller="Inmueble" asp-action="Index"><i
+                    class="fa-solid fa-building"></i><span>Inmuebles</span></a>
+            <a asp-controller="Contrato" asp-action="Index"><i
+                    class="fa-solid fa-file-contract"></i><span>Contratos</span></a>
+            <a asp-controller="Pago" asp-action="Index"><i class="fa-solid fa-money-bill"></i><span>Pagos</span></a>
+            <a asp-controller="Usuario" asp-action="Perfil" title="Mi Perfil" style="margin-right:10px;">
+                <i class="fa-solid fa-user-circle"></i> <span>Perfil</span>
+            </a>
+
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-controller="Usuario" asp-action="Index"><i class="fa-solid fa-user"></i> <span>Usuario</span></a>
+                <a asp-controller="Auditoria" asp-action="Index"><i class="fa-solid fa-clipboard-list"></i>
+                    <span>Auditoria</span></a>
+            }
+        }
+        else
+        {
+            <a asp-controller="Home" asp-action="Index"><i class="fas fa-tachometer-alt"></i> <span>Inicio</span></a>
+            <a asp-controller="Usuario" asp-action="Login"><i class="fa-solid fa-right-to-bracket"></i>
+                <span>Acceder</span></a>
+        }
+    </nav>
+</div>
+
+<div class="main-container">
+    <div class="topnav">
+        <div class="user-info">
             @if (User.Identity.IsAuthenticated)
             {
-                <a asp-controller="Home" asp-action="Index"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-                <a asp-controller="Inquilino" asp-action="Index"><i
-                        class="fa-solid fa-users"></i><span>Inquilinos</span></a>
-                <a asp-controller="Propietario" asp-action="Index"><i
-                        class="fa-solid fa-key"></i><span>Propietarios</span></a>
-                <a asp-controller="Inmueble" asp-action="Index"><i
-                        class="fa-solid fa-building"></i><span>Inmuebles</span></a>
-                <a asp-controller="Contrato" asp-action="Index"><i
-                        class="fa-solid fa-file-contract"></i><span>Contratos</span></a>
-                <a asp-controller="Pago" asp-action="Index"><i class="fa-solid fa-money-bill"></i><span>Pagos</span></a>
+                <div>
+                    <div class="email">@User.Identity.Name</div>
 
-                @if (User.IsInRole("Administrador") || User.IsInRole("SuperAdministrador"))
-                {
-                    <a asp-controller="Usuario" asp-action="Index"><i class="fa-solid fa-user"></i> <span>Usuario</span></a>
-                    <a asp-controller="Auditoria" asp-action="Index"><i class="fa-solid fa-clipboard-list"></i>
-                        <span>Auditoria</span></a>
-                }
+                    <div class="role">
+                        @if (User.Claims.Any(c => c.Type == ClaimTypes.Role))
+                        {
+                            @User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value
+                        }
+                        else
+                        {
+                            <span>(Sin Rol)</span>
+                        }
+                    </div>
+                </div>
+
+                <i class="fas fa-comment-alt" style="margin:0 10px; cursor:pointer;"></i>
+                <i class="fas fa-bell" style="cursor:pointer;"></i>
+
+                <a asp-controller="Usuario" asp-action="Logout" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt" style="margin-left: 10px; cursor: pointer;"></i>
+                </a>
             }
             else
             {
-                <a asp-controller="Home" asp-action="Index"><i class="fas fa-tachometer-alt"></i> <span>Inicio</span></a>
-                <a asp-controller="Usuario" asp-action="Login"><i class="fa-solid fa-right-to-bracket"></i>
-                    <span>Acceder</span></a>
+                <a asp-controller="Usuario" asp-action="Login" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-right-to-bracket"></i> Acceder
+                </a>
             }
-        </nav>
+        </div>
     </div>
 
-    <div class="main-container">
-        <div class="topnav">
-            <div class="user-info">
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <div>
-                        <div class="email">@User.Identity.Name</div>
+    <div class="content">
 
-                        <div class="role">
-                            @if (User.Claims.Any(c => c.Type == ClaimTypes.Role))
-                            {
-                                @User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value
-                            }
-                            else
-                            {
-                                <span>(Sin Rol)</span>
-                            }
-                        </div>
-                    </div>
-
-                    <i class="fas fa-comment-alt" style="margin:0 10px; cursor:pointer;"></i>
-                    <i class="fas fa-bell" style="cursor:pointer;"></i>
-
-                    <a asp-controller="Usuario" asp-action="Logout" title="Cerrar Sesión">
-                        <i class="fas fa-sign-out-alt" style="margin-left: 10px; cursor: pointer;"></i>
-                    </a>
-                }
-                else
-                {
-                    <a asp-controller="Usuario" asp-action="Login" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-right-to-bracket"></i> Acceder
-                    </a>
-                }
-            </div>
-        </div>
-
-        <div class="content">
-
-        </div>
-
-        <div class="container"></div>
-        <main role="main" class="main">
-            @RenderBody()
-        </main>
     </div>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+    <div class="container"></div>
+    <main role="main" class="main">
+        @RenderBody()
+    </main>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 
 </html>
