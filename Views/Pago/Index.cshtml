@@ -1,4 +1,6 @@
-﻿@model IEnumerable<inmobiliaria_mvc.Models.Pago>
+﻿@using inmobiliaria_mvc.ViewModels
+@model TablaViewModel<PagoVM>
+
 
 @{
     ViewData["Title"] = "Lista de Pagos";
@@ -18,7 +20,7 @@
 <p>
     <a asp-action="Create" class="btn btn-success">Registrar Nuevo Pago</a>
 </p>
-
+@* 
 <div class="table-responsive">
     <table class="table table-striped">
         <thead>
@@ -43,7 +45,7 @@
                     <td>@item.Contrato?.Inmueble?.Direccion</td>
                     <td>@item.NumeroPago</td>
                     <td>@item.FechaEsperada.ToShortDateString()</td>
-                    <td>@(item.FechaPago.HasValue ? item.FechaPago.Value.ToShortDateString() : "Pendiente")</td>
+                    <td>@(item.FechaPago.HasValue? item.FechaPago.Value.ToShortDateString() : "Pendiente")</td>
                     <td>@item.Importe.ToString("C")</td>
                     <td>@item.Detalle</td>
                     <td>
@@ -63,4 +65,23 @@
             }
         </tbody>
     </table>
+   
+</div> *@
+
+<div id="tabla-pagos">
+    <partial name="_Tabla" model="Model" />
 </div>
+
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaPagos = initTabla({
+                endpoint: "/Pago/Filtrar",
+                containerId: "tabla-pagos"
+            });
+
+            tablaPagos.init(1);
+        });
+    </script>
+}

@@ -1,8 +1,10 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
+using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.Services;
+using inmobiliaria_mvc.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -23,28 +25,47 @@ namespace inmobiliaria_mvc.Controllers
             _config = config;
         }
 
-        public ActionResult Index()
+        // public ActionResult Index()
+        // {
+        //     var contratos = _repoContrato.ObtenerTodos();
+        //     var todosLosPagos = new List<Pago>();
+
+        //     foreach (var contrato in contratos)
+        //     {
+        //         var pagos = _repositorio.ObtenerPorContrato(contrato.Id, true).ToList();
+
+        //         foreach (var pago in pagos)
+        //         {
+        //             pago.Contrato = contrato;
+        //             todosLosPagos.Add(pago);
+        //         }
+        //     }
+
+        //     if (TempData.ContainsKey("Mensaje"))
+        //         ViewBag.Mensaje = TempData["Mensaje"];
+        //     if (TempData.ContainsKey("Error"))
+        //         ViewBag.Error = TempData["Error"];
+
+        //     return View(todosLosPagos);
+        // }
+
+        public ActionResult Filtrar(int page = 1, int pageSize = 10)
         {
-            var contratos = _repoContrato.ObtenerTodos();
-            var todosLosPagos = new List<Pago>();
+            var tabla = ConstruirTabla(page, pageSize);
+            return PartialView("_Tabla", tabla);
+        }
 
-            foreach (var contrato in contratos)
-            {
-                var pagos = _repositorio.ObtenerPorContrato(contrato.Id, true).ToList();
+        public ActionResult Index(int page = 1, int pageSize = 10)
+        {
+            var tabla = ConstruirTabla(page, pageSize);
 
-                foreach (var pago in pagos)
-                {
-                    pago.Contrato = contrato;
-                    todosLosPagos.Add(pago);
-                }
-            }
-
-            if (TempData.ContainsKey("Mensaje"))
+            if (ViewBag.Mensaje == null && TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
+
             if (TempData.ContainsKey("Error"))
                 ViewBag.Error = TempData["Error"];
 
-            return View(todosLosPagos);
+            return View(tabla);
         }
 
 
@@ -60,7 +81,7 @@ namespace inmobiliaria_mvc.Controllers
             var contrato = _repoContrato.ObtenerPorId(pago.ContratoId);
             if (contrato == null)
             {
-                TempData["Error"] = "Contrato no encontrado.";
+                TempData["Error"] = "Este contrato se encuentra inactivo.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -260,5 +281,36 @@ namespace inmobiliaria_mvc.Controllers
             return RedirectToAction(nameof(Details), new { id = pagoPendiente.IdPago });
 
         }
+
+        private TablaViewModel<PagoVM> ConstruirTabla(int page, int pageSize)
+        {
+            var pagos = _repositorio.Paginar(page, pageSize);
+
+            var tabla = TablaHelper.MapToTablaViewModel(pagos, p => new Dictionary<string, object>
+            {
+                { "Id", p.Pago.IdPago },
+                { "Contrato", p.Pago.ContratoId },
+                { "Inmueble", p.DireccionInmueble ?? "-" },
+                { "Número de pago", p.Pago.NumeroPago },
+                { "Fecha esperada", p.Pago.FechaEsperada.ToString("dd/MM/yyyy") },
+                { "Fecha de pago", p.Pago.FechaPago.HasValue ? p.Pago.FechaPago.Value.ToString("dd/MM/yyyy") : "<span class='badge bg-warning text-dark'>Pendiente</span>" },
+                { "Importe", p.Pago.Importe.ToString("C") },
+                { "Detalle", p.Pago.Detalle ?? "-" },
+                { "Acciones", $@"
+                    {(p.Pago.Estado && !p.Pago.FechaPago.HasValue ? $@"
+                        <form asp-action='Registrar' method='post' style='display:inline;'>
+                            <input type='hidden' name='contratoId' value='{p.Pago.ContratoId}' />
+                            <input type='hidden' name='numeroPago' value='{p.Pago.NumeroPago}' />
+                            <button type='submit' class='btn btn-primary btn-sm'>Registrar Pago</button>
+                        </form>" : "")}
+                    <a href='/Pago/Details/{p.Pago.IdPago}' class='btn btn-info btn-sm'>Detalles</a>
+                    <a href='/Pago/Edit/{p.Pago.IdPago}' class='btn btn-warning btn-sm'>Editar</a>
+                    {BotonHelper.BotonEliminar("Pago", p.Pago.IdPago, $"Pago #{p.Pago.NumeroPago} del contrato {p.Pago.ContratoId}")}
+                " }
+            });
+
+            return tabla;
+        }
+
     }
 }

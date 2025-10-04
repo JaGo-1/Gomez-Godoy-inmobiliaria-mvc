@@ -104,7 +104,7 @@ namespace inmobiliaria_mvc.Repository
             {
                 string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, 
                                fecha_terminacion_anticipada, multa_calculada 
-                               FROM contrato WHERE id = @id AND estado = true";
+                               FROM contrato WHERE id = @id";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
