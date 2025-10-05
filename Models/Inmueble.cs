@@ -45,4 +45,7 @@ public class Inmueble
 
     [ForeignKey(nameof(Imagen.InmuebleId))]
     public IList<Imagen> Imagenes { get; set; } = new List<Imagen>();
+
+    [NotMapped]
+    public string Disponibilidad { get; set; } = string.Empty;
 }

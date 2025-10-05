@@ -20,20 +20,24 @@ public class InmuebleController : Controller
         this.repoPropietario = repoPropietario;
     }
 
-    public ActionResult Filtrar(int page = 1, int pageSize = 10)
+    public ActionResult Filtrar(int page = 1, int pageSize = 10, DateTime? fechaInicio = null, DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
-        var tabla = ConstruirTabla(page, pageSize);
+        var tabla = ConstruirTabla(page, pageSize, fechaInicio, fechaFin, soloDisponibles);
         return PartialView("_Tabla", tabla);
     }
 
-    public ActionResult Index(int page = 1, int pageSize = 5)
+    public ActionResult Index(int page = 1, int pageSize = 5, DateTime? fechaInicio = null, DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
-        var tabla = ConstruirTabla(page, pageSize);
+        var tabla = ConstruirTabla(page, pageSize, fechaInicio, fechaFin, soloDisponibles);
 
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
+
+        ViewData["FechaInicio"] = fechaInicio;
+        ViewData["FechaFin"] = fechaFin;
+        ViewData["SoloDisponibles"] = soloDisponibles;
 
         return View(tabla);
     }
@@ -158,9 +162,9 @@ public class InmuebleController : Controller
         }
     }
 
-    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize)
+    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize, DateTime? fechaInicio, DateTime? fechaFin, bool? soloDisponibles)
     {
-        var lista = repositorio.Paginar(page, pageSize);
+        var lista = repositorio.Paginar(page, pageSize, fechaInicio, fechaFin, soloDisponibles);
 
         var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
         {
@@ -168,9 +172,12 @@ public class InmuebleController : Controller
             { "Dirección", l.Direccion },
             { "Precio", l.Precio },
             { "Ambientes", l.Ambientes },
-            { "Estado", l.Estado
-                ? "<span class='badge bg-success'>Disponible</span>"
-                : "<span class='badge bg-danger'>Inactivo</span>" },
+            { "Disponibilidad", l.Disponibilidad switch
+                {
+                    "Disponible" => "<span class='badge bg-success'>Disponible</span>",
+                    "Ocupado" => "<span class='badge bg-danger'>Ocupado</span>",
+                    _ => "<span class='badge bg-secondary'>Desconocido</span>"
+                } },
             { "Portada", !string.IsNullOrEmpty(l.Portada)
             ? $"<img src='{l.Portada}' alt='Portada del inmueble' style='max-height:50px; max-width:50px; object-fit:cover; border-radius:4px;' />"
             : "<span>Sin Portada</span>" },
@@ -199,7 +206,7 @@ public class InmuebleController : Controller
     {
         try
         {
-            var inmueble = repositorio.ObtenerPorId(entidad.Id);
+            var inmueble = repositorio.ObtenerPorId(entidad.InmuebleId);
             if (inmueble != null && inmueble.Portada != null)
             {
                 string rutaEliminar = Path.Combine(environment.WebRootPath, "Uploads", "Inmuebles", Path.GetFileName(inmueble.Portada));
@@ -242,6 +249,4 @@ public class InmuebleController : Controller
             return RedirectToAction(nameof(Imagenes), new { id = entidad.InmuebleId });
         }
     }
-
-
 }
