@@ -2,6 +2,7 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -128,6 +129,7 @@ public class InmuebleController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
     public ActionResult Delete(int id)
     {
         try
