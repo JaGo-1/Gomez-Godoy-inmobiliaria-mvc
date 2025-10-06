@@ -1,4 +1,5 @@
 using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.Models.Filtros;
 using inmobiliaria_mvc.ViewModels;
 
 namespace inmobiliaria_mvc.Repository
@@ -7,7 +8,7 @@ namespace inmobiliaria_mvc.Repository
         {
                 bool ExisteSolapado(int idInmueble, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null);
                 List<Contrato> ObtenerContratosPorInmueble(int idInmueble);
-                PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible, int? plazo);
+                PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro);
                 bool TerminarAnticipado(int contratoId, DateTime fechaTerminacion, bool pagarMultaAhora = false);
                 int CalcularMesesContrato(DateTime inicio, DateTime fin);
                 int CalcularMesesTranscurridos(Contrato contrato, DateTime fechaTerminacion);

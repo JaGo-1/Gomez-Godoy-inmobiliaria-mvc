@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.Models.Filtros;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.Services;
 using inmobiliaria_mvc.ViewModels;
@@ -34,11 +35,31 @@ namespace inmobiliaria_mvc.Controllers
 
         //GET: CONTRATO
 
-        public ActionResult Filtrar(int page = 1, int pageSize = 10, bool? disponible = null, int? plazo = null)
+        public ActionResult Filtrar
+        (
+            int page = 1,
+            int pageSize = 10,
+            bool? disponible = null,
+            int? plazo = null,
+            DateTime? desde = null,
+            DateTime? hasta = null,
+            string? inquilino = null,
+            string? direccion = null
+        )
         {
             try
             {
-                var tabla = ConstruirTabla(page, pageSize, disponible, plazo);
+                var filtro = new ContratoFiltro
+                {
+                    Disponible = disponible,
+                    Plazo = plazo,
+                    Desde = desde,
+                    Hasta = hasta,
+                    Inquilino = inquilino,
+                    Direccion = direccion
+                };
+
+                var tabla = ConstruirTabla(page, pageSize, filtro);
                 ViewData["Disponible"] = disponible;
 
                 return PartialView("_Tabla", tabla);
@@ -50,9 +71,28 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        public ActionResult Index(int page = 1, int pageSize = 10, bool? disponible = null, int? plazo = null)
+        public ActionResult Index(
+            int page = 1,
+            int pageSize = 10,
+            bool? disponible = null,
+            int? plazo = null,
+            DateTime? desde = null,
+            DateTime? hasta = null,
+            string? inquilino = null,
+            string? direccion = null
+        )
         {
-            var tabla = ConstruirTabla(page, pageSize, disponible, plazo);
+            var filtro = new ContratoFiltro
+            {
+                Disponible = disponible,
+                Plazo = plazo,
+                Desde = desde,
+                Hasta = hasta,
+                Inquilino = inquilino,
+                Direccion = direccion
+            };
+
+            var tabla = ConstruirTabla(page, pageSize, filtro);
 
             if (TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
@@ -347,28 +387,35 @@ namespace inmobiliaria_mvc.Controllers
             });
         }
 
-        private TablaViewModel<Contrato> ConstruirTabla(int page, int pageSize, bool? disponible, int? plazo)
+        private TablaViewModel<Contrato> ConstruirTabla(int page, int pageSize, ContratoFiltro filtro)
         {
-            var contratos = _repo.Paginar(page, pageSize, disponible, plazo);
+            var contratos = _repo.Paginar(page, pageSize, filtro);
 
             var tabla = TablaHelper.MapToTablaViewModel(contratos, c => new Dictionary<string, object>
             {
                 { "Código", c.Id },
-                { "Dirección", c.Inmueble.Direccion },
-                { "Inquilino", $"{c.Inquilino.Nombre} {c.Inquilino.Apellido}" },
-                { "Monto", c.Monto },
+                { "Dirección", c.Inmueble?.Direccion ?? "Sin dirección" },
+                { "Inquilino", $"{c.Inquilino?.Nombre} {c.Inquilino?.Apellido}".Trim() },
+                { "Monto", c.Monto.ToString("C") },
                 { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
                 { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-                { "Estado", c.Estado ? "<span class='badge bg-success'>Vigente</span>"
-                : "<span class='badge bg-danger'>Inactivo</span>"  },
+                { "Estado", c.Estado
+                    ? "<span class='badge bg-success'>Vigente</span>"
+                    : "<span class='badge bg-danger'>Inactivo</span>"
+                },
                 { "Acciones", $@"
                     <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
                     <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                    {BotonHelper.BotonEliminar("Contrato", c.Id, $"Contrato del inmueble {c.Inmueble.Direccion} - Inquilino {c.Inquilino.Nombre} {c.Inquilino.Apellido}")}
+                    {BotonHelper.BotonEliminar(
+                        "Contrato",
+                        c.Id,
+                        $"Contrato del inmueble {c.Inmueble?.Direccion ?? "(sin dirección)"} - Inquilino {c.Inquilino?.Nombre} {c.Inquilino?.Apellido}"
+                    )}
                 " }
             });
 
             return tabla;
         }
+
     }
 }

@@ -3,6 +3,7 @@ using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.Models.Filtros;
 
 namespace inmobiliaria_mvc.Repository
 {
@@ -250,84 +251,62 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
-        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null, int? plazo = null)
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro)
         {
             var res = new List<Contrato>();
             int totalItems = 0;
 
-            using (var conn = new NpgsqlConnection(connectionString))
+            using var conn = new NpgsqlConnection(connectionString);
+            conn.Open();
+
+            var (whereClause, parameters) = ConstruirFiltros(filtro);
+
+            string countSql = $@"
+            SELECT COUNT(*) 
+            FROM contrato c
+            INNER JOIN inmueble i ON c.idinmueble = i.id
+            INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {whereClause}";
+
+            using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
-                conn.Open();
+                countCmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value)).ToArray());
+                totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+            }
 
-                var whereConditions = new List<string>();
+            string selectSql = $@"
+            SELECT c.id, i.direccion, inq.nombre, inq.apellido,
+                c.fecha_inicio, c.fecha_fin, c.monto, c.estado
+            FROM contrato c
+            INNER JOIN inmueble i ON c.idinmueble = i.id
+            INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {whereClause}
+            ORDER BY c.id
+            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
-                if (disponible.HasValue)
-                    whereConditions.Add("c.estado = @disponible");
+            using (var cmd = new NpgsqlCommand(selectSql, conn))
+            {
+                cmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value)).ToArray());
+                cmd.Parameters.AddWithValue("pagina", pagina);
+                cmd.Parameters.AddWithValue("tamPagina", tamPagina);
 
-                if (plazo.HasValue)
-                    whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
-
-                string whereClause = whereConditions.Any()
-                    ? "WHERE " + string.Join(" AND ", whereConditions)
-                    : "";
-
-                // COUNT
-                string countSql = $"SELECT COUNT(*) FROM contrato c {whereClause}";
-                using (var countCmd = new NpgsqlCommand(countSql, conn))
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
                 {
-                    if (disponible.HasValue)
-                        countCmd.Parameters.AddWithValue("disponible", disponible.Value);
-
-                    if (plazo.HasValue)
-                        countCmd.Parameters.AddWithValue("plazo", plazo.Value);
-
-                    totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
-                }
-
-                // SELECT
-                string sql = $@"
-                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto, c.estado   
-                FROM contrato c
-                INNER JOIN inmueble i ON c.idinmueble = i.id
-                INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
-                {whereClause}
-                ORDER BY c.id
-                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
-
-                using (var cmd = new NpgsqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("pagina", pagina);
-                    cmd.Parameters.AddWithValue("tamPagina", tamPagina);
-
-                    if (disponible.HasValue)
-                        cmd.Parameters.AddWithValue("disponible", disponible.Value);
-
-                    if (plazo.HasValue)
-                        cmd.Parameters.AddWithValue("plazo", plazo.Value);
-
-                    using (var reader = cmd.ExecuteReader())
+                    res.Add(new Contrato
                     {
-                        while (reader.Read())
+                        Id = reader.GetInt32(0),
+                        Inmueble = new Inmueble { Direccion = reader.GetString(1) },
+                        Inquilino = new Inquilino
                         {
-                            res.Add(new Contrato
-                            {
-                                Id = reader.GetInt32(0),
-                                Inmueble = new Inmueble
-                                {
-                                    Direccion = reader.GetString(1)
-                                },
-                                Inquilino = new Inquilino
-                                {
-                                    Nombre = reader.GetString(2),
-                                    Apellido = reader.GetString(3)
-                                },
-                                Fecha_inicio = reader.GetDateTime(4),
-                                Fecha_fin = reader.GetDateTime(5),
-                                Monto = reader.GetInt32(6),
-                                Estado = reader.GetBoolean(7)
-                            });
-                        }
-                    }
+                            Nombre = reader.GetString(2),
+                            Apellido = reader.GetString(3)
+                        },
+                        Fecha_inicio = reader.GetDateTime(4),
+                        Fecha_fin = reader.GetDateTime(5),
+                        Monto = reader.GetDecimal(6),
+                        Estado = reader.GetBoolean(7)
+                    });
                 }
             }
 
@@ -411,6 +390,53 @@ namespace inmobiliaria_mvc.Repository
         public decimal CalcularMultaImporte(Contrato contrato, DateTime fechaTerminacion)
         {
             return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
+        }
+        private (string whereClause, List<NpgsqlParameter> parameters) ConstruirFiltros(ContratoFiltro filtro)
+        {
+            var whereConditions = new List<string>();
+            var parameters = new List<NpgsqlParameter>();
+
+            if (filtro.Disponible.HasValue)
+            {
+                whereConditions.Add("c.estado = @disponible");
+                parameters.Add(new NpgsqlParameter("disponible", filtro.Disponible.Value));
+            }
+
+            if (filtro.Plazo.HasValue)
+            {
+                whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
+                parameters.Add(new NpgsqlParameter("plazo", filtro.Plazo.Value));
+            }
+
+            if (filtro.Desde.HasValue)
+            {
+                whereConditions.Add("c.fecha_inicio >= @desde");
+                parameters.Add(new NpgsqlParameter("desde", filtro.Desde.Value));
+            }
+
+            if (filtro.Hasta.HasValue)
+            {
+                whereConditions.Add("c.fecha_fin <= @hasta");
+                parameters.Add(new NpgsqlParameter("hasta", filtro.Hasta.Value));
+            }
+
+            if (!string.IsNullOrEmpty(filtro.Inquilino))
+            {
+                whereConditions.Add("(inq.nombre ILIKE @inquilino OR inq.apellido ILIKE @inquilino)");
+                parameters.Add(new NpgsqlParameter("inquilino", $"%{filtro.Inquilino}%"));
+            }
+
+            if (!string.IsNullOrEmpty(filtro.Direccion))
+            {
+                whereConditions.Add("i.direccion ILIKE @direccion");
+                parameters.Add(new NpgsqlParameter("direccion", $"%{filtro.Direccion}%"));
+            }
+
+            string whereClause = whereConditions.Any()
+                ? "WHERE " + string.Join(" AND ", whereConditions)
+                : "";
+
+            return (whereClause, parameters);
         }
     }
 }
