@@ -6,7 +6,7 @@ namespace inmobiliaria_mvc.Models;
 public enum enRoles
 {
     Administrador = 1,
-    Empleado = 2,
+    Empleado = 2
 }
 
 public class Usuario

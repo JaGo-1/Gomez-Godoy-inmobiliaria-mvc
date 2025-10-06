@@ -14,7 +14,8 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryPago _repoPago;
         private readonly IConfiguration _config;
 
-        public InquilinoController(IRepositoryInquilino repo, IRepositoryContrato repoContrato, IRepositoryPago repoPago, IConfiguration config)
+        public InquilinoController(IRepositoryInquilino repo, IRepositoryContrato repoContrato,
+            IRepositoryPago repoPago, IConfiguration config)
         {
             repositorio = repo;
             _repoContrato = repoContrato;
@@ -50,24 +51,25 @@ namespace inmobiliaria_mvc.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                var contratos = _repoContrato.ObtenerTodos()
-                    .Where(c => c.IdInquilino == id && c.Estado)
+                var contratos = _repoContrato.ObtenerContratosPorInquilino(id)
                     .ToList();
 
-                var pagos = new List<Pago>();
                 foreach (var contrato in contratos)
                 {
-                    var pagosContrato = _repoPago.ObtenerPorContrato(contrato.Id, incluirAnulados: true)
+                    contrato.Pagos = _repoPago.ObtenerPorContrato(contrato.Id, incluirAnulados: true)
                         .OrderBy(p => p.NumeroPago)
                         .ToList();
-                    pagos.AddRange(pagosContrato);
+
+                    foreach (var pago in contrato.Pagos)
+                    {
+                        pago.Contrato = contrato;
+                    }
                 }
 
                 var viewModel = new InquilinoDetalleVM
                 {
                     Inquilino = inquilino,
                     Contratos = contratos,
-                    Pagos = pagos
                 };
 
                 if (TempData.ContainsKey("Mensaje"))
@@ -130,6 +132,7 @@ namespace inmobiliaria_mvc.Controllers
                     TempData["Error"] = "Inquilino no encontrado para edición.";
                     return RedirectToAction(nameof(Index));
                 }
+
                 return View(entidad);
             }
             catch (Exception ex)
@@ -187,11 +190,12 @@ namespace inmobiliaria_mvc.Controllers
             var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
             {
                 { "Código", l.IdInquilino },
-                { "DNI", l.Dni},
-                { "Nombre", $"{l.Nombre} {l.Apellido}"},
-                {"Teléfono", l.Telefono},
-                {"Email", l.Email},
-                { "Acciones", $@"
+                { "DNI", l.Dni },
+                { "Nombre", $"{l.Nombre} {l.Apellido}" },
+                { "Teléfono", l.Telefono },
+                { "Email", l.Email },
+                {
+                    "Acciones", $@"
                     <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
                     <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
                     {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}

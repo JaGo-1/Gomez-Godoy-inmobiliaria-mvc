@@ -2,6 +2,7 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.ViewModels;
 using Npgsql;
+using inmobiliaria_mvc.Repository;
 
 namespace inmobiliaria_mvc.Repository;
 
@@ -37,7 +38,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("@uso", inmueble.Uso.ToString());
                 cmd.Parameters.AddWithValue("@tipo", inmueble.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@propietarioId", inmueble.PropietarioId);
-                cmd.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(inmueble.Portada) ? (object)DBNull.Value : inmueble.Portada);
+                cmd.Parameters.AddWithValue("@portada",
+                    string.IsNullOrEmpty(inmueble.Portada) ? (object)DBNull.Value : inmueble.Portada);
 
                 conn.Open();
                 var id = cmd.ExecuteScalar();
@@ -45,9 +47,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 {
                     res = Convert.ToInt32(id);
                 }
+
                 conn.Close();
             }
         }
+
         return res;
     }
 
@@ -65,6 +69,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 conn.Close();
             }
         }
+
         return res;
     }
 
@@ -98,7 +103,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("@uso", p.Uso.ToString());
                 cmd.Parameters.AddWithValue("@tipo", p.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@propietarioId", p.PropietarioId);
-                cmd.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(p.Portada) ? (object)DBNull.Value : p.Portada);
+                cmd.Parameters.AddWithValue("@portada",
+                    string.IsNullOrEmpty(p.Portada) ? (object)DBNull.Value : p.Portada);
                 cmd.Parameters.AddWithValue("@id", p.Id);
 
                 conn.Open();
@@ -151,9 +157,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                         });
                     }
                 }
+
                 conn.Close();
             }
         }
+
         return res;
     }
 
@@ -191,9 +199,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                         };
                     }
                 }
+
                 conn.Close();
             }
         }
+
         return inmueble!;
     }
 
@@ -204,7 +214,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             var res = new List<Inmueble>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = @"SELECT direccion, tipo, uso, ambientes, precio FROM inmueble WHERE propietarioid = @propietarioId AND estado = true;";
+                string sql =
+                    @"SELECT direccion, tipo, uso, ambientes, precio FROM inmueble WHERE propietarioid = @propietarioId AND estado = true;";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -225,9 +236,11 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             });
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return res;
         }
         catch (Exception ex)
@@ -235,41 +248,102 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             Console.WriteLine("Error en ObtenerPorPropietario: " + ex.Message);
             throw;
         }
-
     }
 
-    public PagedResult<Inmueble> Paginar(int pagina, int tamPagina)
+    public PagedResult<Inmueble> Paginar(int pagina, int tamPagina, string? termino = null,
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
         var res = new List<Inmueble>();
         int totalItems = 0;
 
+        DateTime effectiveStart = fechaInicio ?? DateTime.Today;
+        DateTime effectiveEnd = fechaFin ?? DateTime.Today;
+        if (effectiveStart > effectiveEnd)
+        {
+            var temp = effectiveStart;
+            effectiveStart = effectiveEnd;
+            effectiveEnd = temp;
+        }
+
         using (var conn = new NpgsqlConnection(connectionString))
         {
             conn.Open();
-            string countSql = "SELECT COUNT (*) FROM inmueble WHERE estado = true";
+
+            var whereConditions = new List<string> { "i.Estado = true" };
+
+            if (!string.IsNullOrEmpty(termino))
+            {
+                whereConditions.Add($@"(LOWER(i.Direccion) LIKE LOWER(@termino) 
+                                   OR CAST(i.Precio AS TEXT) LIKE @termino_precio
+                                   OR LOWER(p.Nombre) LIKE LOWER(@termino_prop)
+                                   OR LOWER(p.Apellido) LIKE LOWER(@termino_prop))");
+            }
+
+            bool hasAvailabilityFilter = soloDisponibles.HasValue;
+            if (hasAvailabilityFilter)
+            {
+                var existsClause = soloDisponibles.Value ? "NOT EXISTS" : "EXISTS";
+                whereConditions.Add(
+                    $"{existsClause} (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = true AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))");
+            }
+
+            string whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+
+            string countJoin = !string.IsNullOrEmpty(termino)
+                ? "INNER JOIN Propietario p ON i.PropietarioId = p.Id"
+                : "";
+            string countSql = $"SELECT COUNT(*) FROM Inmueble i {countJoin} {whereClause}";
             using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    var likeTerm = $"%{termino}%";
+                    countCmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    countCmd.Parameters.AddWithValue("@termino_precio", $"%{termino}%");
+                    countCmd.Parameters.AddWithValue("@termino_prop", $"%{termino}%");
+                }
+
+                if (hasAvailabilityFilter)
+                {
+                    countCmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
+                    countCmd.Parameters.AddWithValue("@fecha_fin", effectiveEnd);
+                }
+
                 totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
             }
 
-            string sql = @"
-            SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido 
-            FROM inmueble i
-            INNER JOIN Propietario p ON i.PropietarioId = p.Id
-            ORDER BY i.Id
-            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina
-            ";
+            string selectJoin = "INNER JOIN Propietario p ON i.PropietarioId = p.Id";
+            string sql = $@"
+        SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido,
+               CASE WHEN EXISTS (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = true AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))
+                    THEN 'Ocupado' ELSE 'Disponible' END as Disponibilidad
+        FROM Inmueble i
+        {selectJoin}
+        {whereClause}
+        ORDER BY i.Id
+        LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("pagina", pagina);
                 cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+                cmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
+                cmd.Parameters.AddWithValue("@fecha_fin", effectiveEnd);
+
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    var likeTerm = $"%{termino}%";
+                    cmd.Parameters.AddWithValue("@termino", likeTerm);
+                    cmd.Parameters.AddWithValue("@termino_precio", likeTerm);
+                    cmd.Parameters.AddWithValue("@termino_prop", likeTerm);
+                }
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        res.Add(new Inmueble
+                        var inmueble = new Inmueble
                         {
                             Id = reader.GetInt32(0),
                             Direccion = reader.GetString(1),
@@ -286,13 +360,17 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                             {
                                 Nombre = reader.GetString(11),
                                 Apellido = reader.GetString(12)
-                            }
-                        });
+                            },
+                            Disponibilidad = reader.GetString(13)
+                        };
+                        res.Add(inmueble);
                     }
                 }
             }
+
             conn.Close();
         }
+
         return new PagedResult<Inmueble>
         {
             Items = res,
@@ -301,6 +379,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             PageSize = tamPagina
         };
     }
+
     public int ModificarPortada(int id, string url)
     {
         int res = -1;
@@ -310,18 +389,19 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             UPDATE Inmueble SET
             Portada = @portada
             WHERE Id = @id";
-        
+
             using (var command = new NpgsqlCommand(sql, connection))
             {
                 command.Parameters.AddWithValue("@portada", string.IsNullOrEmpty(url) ? (object)DBNull.Value : url);
                 command.Parameters.AddWithValue("@id", id);
                 command.CommandType = CommandType.Text;
-            
+
                 connection.Open();
                 res = command.ExecuteNonQuery();
                 connection.Close();
             }
         }
+
         return res;
     }
 }

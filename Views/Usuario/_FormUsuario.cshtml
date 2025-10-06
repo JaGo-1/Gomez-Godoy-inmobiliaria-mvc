@@ -1,0 +1,50 @@
+﻿@model inmobiliaria_mvc.Models.Usuario
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="form-group">
+    <label asp-for="Nombre" class="control-label"></label>
+    <input asp-for="Nombre" class="form-control" />
+    <span asp-validation-for="Nombre" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="Apellido" class="control-label"></label>
+    <input asp-for="Apellido" class="form-control" />
+    <span asp-validation-for="Apellido" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="Email" class="control-label"></label>
+    <input asp-for="Email" class="form-control" />
+    <span asp-validation-for="Email" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="Password" class="control-label"></label>
+    <input asp-for="Password" type="password" class="form-control" />
+    <span asp-validation-for="Password" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="AvatarFile" class="control-label"></label>
+    <input type="file" name="AvatarFile" class="form-control" />
+    <span asp-validation-for="AvatarFile" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label class="control-label">Rol</label>
+    <select class="form-control" name="Rol">
+        @foreach (var kvp in (IDictionary<int, string>)ViewBag.Roles)
+        {
+            <option value="@kvp.Key" selected="@(kvp.Key == Model.Rol)">
+                @kvp.Value
+            </option>
+        }
+    </select>
+    <span asp-validation-for="Rol" class="text-danger"></span>
+</div>
+
+<div class="form-group mt-3">
+    <input type="submit" value="Guardar" class="btn btn-primary" />
+</div>

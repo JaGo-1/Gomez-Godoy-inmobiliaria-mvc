@@ -22,9 +22,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Administrador", policy =>
         policy.RequireClaim(ClaimTypes.Role, "Administrador")
     );
-    options.AddPolicy("SuperAdministrador", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "SuperAdministrador")
-    );
     options.AddPolicy("Empleado", policy =>
         policy.RequireClaim(ClaimTypes.Role, "Empleado")
     );

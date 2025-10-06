@@ -22,7 +22,9 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
 
-        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo, IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago, IAuditoriaService auditoriaService, IConfiguration config)
+        public ContratoController(ILogger<ContratoController> logger, IRepositoryContrato repo,
+            IRepositoryInmueble repoInmueble, IRepositoryInquilino repoInquilino, IRepositoryPago repoPago,
+            IAuditoriaService auditoriaService, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
@@ -161,9 +163,11 @@ namespace inmobiliaria_mvc.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError(string.Empty, "El inmueble ya tiene un contrato en las fechas indicadas");
+                        ModelState.AddModelError(string.Empty,
+                            "El inmueble ya tiene un contrato en las fechas indicadas");
                     }
                 }
+
                 ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion");
                 ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto");
                 return View(contrato);
@@ -241,8 +245,10 @@ namespace inmobiliaria_mvc.Controllers
                     TempData["Error"] = "Contrato no encontrado para edición.";
                     return RedirectToAction(nameof(Index));
                 }
+
                 ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion", contrato.IdInmueble);
-                ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto", contrato.IdInquilino);
+                ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto",
+                    contrato.IdInquilino);
                 return View(contrato);
             }
             catch (Exception ex)
@@ -263,6 +269,7 @@ namespace inmobiliaria_mvc.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
                 }
+
                 if (ModelState.IsValid)
                 {
                     contrato.Id = id;
@@ -286,9 +293,11 @@ namespace inmobiliaria_mvc.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError(string.Empty, "El inmueble ya tiene un contrato en las fechas indicadas");
+                        ModelState.AddModelError(string.Empty,
+                            "El inmueble ya tiene un contrato en las fechas indicadas");
                     }
                 }
+
                 ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion");
                 ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto");
                 return View(contrato);
@@ -323,41 +332,59 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        // GET: Contrato/TerminarAnticipado
         public ActionResult TerminarAnticipado(int id)
         {
             var contrato = _repo.ObtenerPorId(id);
-            if (contrato == null) { TempData["Error"] = "Contrato no encontrado."; return RedirectToAction(nameof(Index)); }
-
-            ViewBag.TotalMeses = _repo.CalcularMesesContrato(contrato.Fecha_inicio, contrato.Fecha_fin);
-            ViewBag.MesesTranscurridos = 0;
-            ViewBag.MesesAdeudados = 0;
-            ViewBag.MultaMeses = 0;
-            ViewBag.MultaImporte = 0m;
-
-            return View(contrato);
-        }
-
-        // POST: Contrato/TerminarAnticipado
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult TerminarAnticipado(int id, DateTime FechaTerminacionAnticipada, bool pagarMultaAhora = false)
-        {
-            var contrato = _repo.ObtenerPorId(id);
-            if (contrato == null) { TempData["Error"] = "Contrato no encontrado."; return RedirectToAction(nameof(Index)); }
-
-            bool exito = _repo.TerminarAnticipado(id, FechaTerminacionAnticipada, pagarMultaAhora);
-
-            if (exito)
+            if (contrato == null)
             {
-                var multa = _repo.CalcularMultaImporte(contrato, FechaTerminacionAnticipada);
-                string estado = pagarMultaAhora ? "pagada en el momento" : "registrada como pendiente";
-                TempData["Mensaje"] = $"Contrato marcado para terminar el {FechaTerminacionAnticipada:d}. Multa: {multa:C}, {estado}.";
+                TempData["Error"] = "Contrato no encontrado.";
                 return RedirectToAction(nameof(Index));
             }
 
-            TempData["Error"] = "Error al terminar anticipadamente el contrato.";
-            return RedirectToAction(nameof(TerminarAnticipado), new { id });
+            return RedirectToAction("Details", "Inquilino", new { id = contrato.IdInquilino });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult TerminarAnticipado(int Id, DateTime FechaTerminacionAnticipada, bool pagarMultaAhora)
+        {
+            var contrato = _repo.ObtenerPorId(Id);
+            if (contrato == null)
+            {
+                TempData["Error"] = "Contrato no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (FechaTerminacionAnticipada < contrato.Fecha_inicio || FechaTerminacionAnticipada > contrato.Fecha_fin)
+            {
+                TempData["Error"] = "La fecha de terminación debe estar dentro del periodo del contrato original.";
+                return RedirectToAction("Details", "Inquilino", new { id = contrato.IdInquilino });
+            }
+
+            try
+            {
+                bool exito = _repo.TerminarAnticipado(Id, FechaTerminacionAnticipada, pagarMultaAhora);
+
+                if (exito)
+                {
+                    var multaImporte = _repo.CalcularMultaImporte(contrato, FechaTerminacionAnticipada);
+                    string estadoPago = pagarMultaAhora ? "pagada en el momento" : "registrada como pendiente";
+
+                    TempData["Mensaje"] =
+                        $"Contrato N° {Id} terminado anticipadamente el {FechaTerminacionAnticipada:d}. Multa: {multaImporte:C}, {estadoPago}.";
+
+                    return RedirectToAction("Details", "Inquilino", new { id = contrato.IdInquilino });
+                }
+
+                TempData["Error"] = "Error al terminar anticipadamente el contrato. Verifique las fechas.";
+                return RedirectToAction("Details", "Inquilino", new { id = contrato.IdInquilino });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error al terminar anticipadamente el contrato: {ex.Message}";
+                _logger.LogError(ex, $"Error al terminar anticipadamente contrato {Id}");
+                return RedirectToAction("Details", "Inquilino", new { id = contrato.IdInquilino });
+            }
         }
 
 

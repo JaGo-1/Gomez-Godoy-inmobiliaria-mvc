@@ -28,8 +28,11 @@
                 <a asp-controller="Contrato" asp-action="Index"><i
                         class="fa-solid fa-file-contract"></i><span>Contratos</span></a>
                 <a asp-controller="Pago" asp-action="Index"><i class="fa-solid fa-money-bill"></i><span>Pagos</span></a>
+                <a asp-controller="Usuario" asp-action="Perfil" title="Mi Perfil" style="margin-right:10px;">
+                    <i class="fa-solid fa-user-circle"></i> <span>Perfil</span>
+                </a>
 
-                @if (User.IsInRole("Administrador") || User.IsInRole("SuperAdministrador"))
+                @if (User.IsInRole("Administrador"))
                 {
                     <a asp-controller="Usuario" asp-action="Index"><i class="fa-solid fa-user"></i> <span>Usuario</span></a>
                     <a asp-controller="Auditoria" asp-action="Index"><i class="fa-solid fa-clipboard-list"></i>

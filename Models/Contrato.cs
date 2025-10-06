@@ -26,4 +26,6 @@ public class Contrato
 
     [ValidateNever]
     public bool Estado { get; set; } = true;
+    public List<Pago> Pagos { get; set; } = new List<Pago>(); 
+
 }
