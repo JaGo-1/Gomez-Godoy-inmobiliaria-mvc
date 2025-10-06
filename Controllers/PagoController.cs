@@ -105,11 +105,11 @@ namespace inmobiliaria_mvc.Controllers
                 }
             }
 
-            if (!pagos.Any())
-            {
-                TempData["Error"] = "No se encontraron pagos para este inquilino.";
-                return RedirectToAction(nameof(Index));
-            }
+            // if (!pagos.Any())
+            // {
+            //     TempData["Error"] = "No se encontraron pagos para este inquilino.";
+            //     return RedirectToAction(nameof(Index));
+            // }
 
             ViewBag.InquilinoNombre = $"{contrato.Inquilino?.Nombre} {contrato.Inquilino?.Apellido}";
             ViewBag.InquilinoId = inquilinoId;
@@ -125,7 +125,8 @@ namespace inmobiliaria_mvc.Controllers
             var contratos = _repoContrato.ObtenerTodos()
                 .Select(c => new
                 {
-                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                    c.Id,
+                    Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
                 })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion");
@@ -159,7 +160,8 @@ namespace inmobiliaria_mvc.Controllers
             var contratos = _repoContrato.ObtenerTodos()
                 .Select(c => new
                 {
-                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                    c.Id,
+                    Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
                 })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion", pago.ContratoId);
@@ -178,7 +180,8 @@ namespace inmobiliaria_mvc.Controllers
             var contratos = _repoContrato.ObtenerTodos()
                 .Select(c => new
                 {
-                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                    c.Id,
+                    Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
                 })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion", pago.ContratoId);
