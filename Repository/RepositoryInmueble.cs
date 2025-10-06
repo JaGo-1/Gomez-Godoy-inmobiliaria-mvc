@@ -250,7 +250,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
         }
     }
 
-    public PagedResult<Inmueble> Paginar(int pagina, int tamPagina, DateTime? fechaInicio = null,
+    public PagedResult<Inmueble> Paginar(int pagina, int tamPagina, string? termino = null,
+        DateTime? fechaInicio = null,
         DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
         var res = new List<Inmueble>();
@@ -271,6 +272,14 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
 
             var whereConditions = new List<string> { "i.Estado = true" };
 
+            if (!string.IsNullOrEmpty(termino))
+            {
+                whereConditions.Add($@"(LOWER(i.Direccion) LIKE LOWER(@termino) 
+                                   OR CAST(i.Precio AS TEXT) LIKE @termino_precio
+                                   OR LOWER(p.Nombre) LIKE LOWER(@termino_prop)
+                                   OR LOWER(p.Apellido) LIKE LOWER(@termino_prop))");
+            }
+
             bool hasAvailabilityFilter = soloDisponibles.HasValue;
             if (hasAvailabilityFilter)
             {
@@ -281,9 +290,20 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
 
             string whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
 
-            string countSql = $"SELECT COUNT(*) FROM Inmueble i {whereClause}";
+            string countJoin = !string.IsNullOrEmpty(termino)
+                ? "INNER JOIN Propietario p ON i.PropietarioId = p.Id"
+                : "";
+            string countSql = $"SELECT COUNT(*) FROM Inmueble i {countJoin} {whereClause}";
             using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    var likeTerm = $"%{termino}%";
+                    countCmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    countCmd.Parameters.AddWithValue("@termino_precio", $"%{termino}%");
+                    countCmd.Parameters.AddWithValue("@termino_prop", $"%{termino}%");
+                }
+
                 if (hasAvailabilityFilter)
                 {
                     countCmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
@@ -293,12 +313,13 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
             }
 
+            string selectJoin = "INNER JOIN Propietario p ON i.PropietarioId = p.Id";
             string sql = $@"
         SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido,
                CASE WHEN EXISTS (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = true AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))
                     THEN 'Ocupado' ELSE 'Disponible' END as Disponibilidad
         FROM Inmueble i
-        INNER JOIN Propietario p ON i.PropietarioId = p.Id
+        {selectJoin}
         {whereClause}
         ORDER BY i.Id
         LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
@@ -309,6 +330,14 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("tamPagina", tamPagina);
                 cmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
                 cmd.Parameters.AddWithValue("@fecha_fin", effectiveEnd);
+
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    var likeTerm = $"%{termino}%";
+                    cmd.Parameters.AddWithValue("@termino", likeTerm);
+                    cmd.Parameters.AddWithValue("@termino_precio", likeTerm);
+                    cmd.Parameters.AddWithValue("@termino_prop", likeTerm);
+                }
 
                 using (var reader = cmd.ExecuteReader())
                 {
