@@ -39,6 +39,7 @@ namespace inmobiliaria_mvc.Repository
                         contratoId = Convert.ToInt32(id);
                         p.Id = contratoId;
                     }
+
                     conn.Close();
                 }
 
@@ -47,6 +48,7 @@ namespace inmobiliaria_mvc.Repository
                     _repoPago.GenerarPrimerPagoParaContrato(contratoId, p.Monto, p.Fecha_inicio);
                 }
             }
+
             return contratoId;
         }
 
@@ -64,6 +66,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -86,7 +89,8 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_inicio", p.Fecha_inicio);
                     cmd.Parameters.AddWithValue("@fecha_fin", p.Fecha_fin);
                     cmd.Parameters.AddWithValue("@monto", p.Monto);
-                    cmd.Parameters.AddWithValue("@fecha_terminacion_anticipada", (object)p.FechaTerminacionAnticipada ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@fecha_terminacion_anticipada",
+                        (object)p.FechaTerminacionAnticipada ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@multa_calculada", (object)p.MultaCalculada ?? DBNull.Value);
 
                     conn.Open();
@@ -94,6 +98,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -123,11 +128,16 @@ namespace inmobiliaria_mvc.Repository
                                 Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                 Fecha_fin = reader.GetDateTime("fecha_fin"),
                                 Monto = reader.GetDecimal("monto"),
-                                FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada") ? null : reader.GetDateTime("fecha_terminacion_anticipada"),
-                                MultaCalculada = reader.IsDBNull("multa_calculada") ? null : reader.GetDecimal("multa_calculada")
+                                FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
+                                    ? null
+                                    : reader.GetDateTime("fecha_terminacion_anticipada"),
+                                MultaCalculada = reader.IsDBNull("multa_calculada")
+                                    ? null
+                                    : reader.GetDecimal("multa_calculada")
                             };
                         }
                     }
+
                     conn.Close();
                 }
             }
@@ -173,9 +183,11 @@ namespace inmobiliaria_mvc.Repository
                             });
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -213,7 +225,8 @@ namespace inmobiliaria_mvc.Repository
                 var res = new List<Contrato>();
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
-                    string sql = @"SELECT id, idinquilino, fecha_inicio, fecha_fin, monto, estado, fecha_terminacion_anticipada, multa_calculada 
+                    string sql =
+                        @"SELECT id, idinquilino, fecha_inicio, fecha_fin, monto, estado, fecha_terminacion_anticipada, multa_calculada 
                                    FROM contrato WHERE idinmueble = @idInmueble AND estado = TRUE;";
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
@@ -234,14 +247,20 @@ namespace inmobiliaria_mvc.Repository
                                     Fecha_fin = reader.GetDateTime("fecha_fin"),
                                     Monto = reader.GetDecimal("monto"),
                                     Estado = reader.GetBoolean("estado"),
-                                    FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada") ? null : reader.GetDateTime("fecha_terminacion_anticipada"),
-                                    MultaCalculada = reader.IsDBNull("multa_calculada") ? null : reader.GetDecimal("multa_calculada")
+                                    FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
+                                        ? null
+                                        : reader.GetDateTime("fecha_terminacion_anticipada"),
+                                    MultaCalculada = reader.IsDBNull("multa_calculada")
+                                        ? null
+                                        : reader.GetDecimal("multa_calculada")
                                 });
                             }
                         }
+
                         conn.Close();
                     }
                 }
+
                 return res;
             }
             catch (Exception ex)
@@ -250,6 +269,7 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
+
         public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null, int? plazo = null)
         {
             var res = new List<Contrato>();
@@ -265,7 +285,8 @@ namespace inmobiliaria_mvc.Repository
                     whereConditions.Add("c.estado = @disponible");
 
                 if (plazo.HasValue)
-                    whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
+                    whereConditions.Add(
+                        "c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
 
                 string whereClause = whereConditions.Any()
                     ? "WHERE " + string.Join(" AND ", whereConditions)
@@ -373,7 +394,8 @@ namespace inmobiliaria_mvc.Repository
                 FechaEsperada = fechaTerminacion,
                 FechaPago = pagarMultaAhora ? DateTime.Now : (DateTime?)null,
                 Importe = contrato.MultaCalculada ?? 0m,
-                Detalle = $"Multa por terminación anticipada ({CalcularMultaMeses(contrato, fechaTerminacion)} mes(es))",
+                Detalle =
+                    $"Multa por terminación anticipada ({CalcularMultaMeses(contrato, fechaTerminacion)} mes(es))",
                 Estado = true,
                 EsMulta = true
             };
@@ -411,6 +433,64 @@ namespace inmobiliaria_mvc.Repository
         public decimal CalcularMultaImporte(Contrato contrato, DateTime fechaTerminacion)
         {
             return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
+        }
+
+        public IList<Contrato> ObtenerContratosPorInquilino(int idInquilino)
+        {
+            try
+            {
+                var res = new List<Contrato>();
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    string sql = @"SELECT 
+                               id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, estado, 
+                               fecha_terminacion_anticipada, multa_calculada 
+                           FROM contrato 
+                           WHERE idinquilino = @idInquilino;";
+
+                    using (var cmd = new NpgsqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idInquilino", idInquilino);
+                        conn.Open();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            var repoInquilino = new RepositoryInquilino(configuration);
+                            var repoInmueble = new RepositoryInmueble(configuration);
+                            while (reader.Read())
+                            {
+                                var contrato = new Contrato
+                                {
+                                    Id = reader.GetInt32("id"),
+                                    IdInmueble = reader.GetInt32("idinmueble"),
+                                    IdInquilino = reader.GetInt32("idinquilino"),
+                                    Inquilino = repoInquilino.ObtenerPorId(reader.GetInt32("idinquilino")),
+                                    Inmueble = repoInmueble.ObtenerPorId(reader.GetInt32("idinmueble")),
+                                    Fecha_inicio = reader.GetDateTime("fecha_inicio"),
+                                    Fecha_fin = reader.GetDateTime("fecha_fin"),
+                                    Monto = reader.GetDecimal("monto"),
+                                    Estado = reader.GetBoolean("estado"),
+                                    FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
+                                        ? null
+                                        : reader.GetDateTime("fecha_terminacion_anticipada"),
+                                    MultaCalculada = reader.IsDBNull("multa_calculada")
+                                        ? null
+                                        : reader.GetDecimal("multa_calculada")
+                                };
+                                res.Add(contrato);
+                            }
+                        }
+
+                        conn.Close();
+                    }
+                }
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error en ObtenerContratosPorInquilino: " + ex.Message);
+                throw;
+            }
         }
     }
 }
