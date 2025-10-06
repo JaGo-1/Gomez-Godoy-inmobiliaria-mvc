@@ -1,0 +1,125 @@
+﻿@model inmobiliaria_mvc.Models.Usuario
+
+@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Mensaje"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container py-4">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body">
+            <h3 class="mb-4 text-center"><i class="fa-solid fa-user"></i> Mi Perfil</h3>
+
+            <form asp-action="EditarPerfil" asp-controller="Usuario" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row mb-3 text-center">
+                    <div class="col">
+                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                        {
+                            <img src="@Model.Avatar" class="rounded-circle border" width="120" height="120" style="object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <img src="/images/default-avatar.png" class="rounded-circle border" width="120" height="120" />
+                        }
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Nombre" class="form-label fw-bold"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Apellido" class="form-label fw-bold"></label>
+                        <input asp-for="Apellido" class="form-control" />
+                        <span asp-validation-for="Apellido" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label asp-for="Email" class="form-label fw-bold"></label>
+                        <input asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="AvatarFile" class="form-label fw-bold">Cambiar avatar</label>
+                    <input asp-for="AvatarFile" type="file" class="form-control" />
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </a>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#cambiarPasswordModal">
+                        <i class="fa-solid fa-key"></i> Cambiar contraseña
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cambiarPasswordModal" tabindex="-1" aria-labelledby="cambiarPasswordLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="cambiarPasswordLabel">
+                    <i class="fa-solid fa-key"></i> Cambiar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form asp-action="CambiarPassword" asp-controller="Usuario" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Contraseña actual</label>
+                        <input type="password" name="PasswordActual" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nueva contraseña</label>
+                        <input type="password" name="PasswordNueva" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Confirmar nueva contraseña</label>
+                        <input type="password" name="PasswordConfirmacion" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa-solid fa-check"></i> Actualizar contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

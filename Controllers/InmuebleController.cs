@@ -13,27 +13,35 @@ public class InmuebleController : Controller
     private readonly IRepositoryContrato repoContrato;
     private readonly IRepositoryPropietario repoPropietario;
 
-    public InmuebleController(IRepositoryInmueble repositorio, IRepositoryContrato repoContrato, IRepositoryPropietario repoPropietario)
+    public InmuebleController(IRepositoryInmueble repositorio, IRepositoryContrato repoContrato,
+        IRepositoryPropietario repoPropietario)
     {
         this.repositorio = repositorio;
         this.repoContrato = repoContrato;
         this.repoPropietario = repoPropietario;
     }
 
-    public ActionResult Filtrar(int page = 1, int pageSize = 10)
+    public ActionResult Filtrar(int page = 1, int pageSize = 10, string? termino = null, DateTime? fechaInicio = null,
+        DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
-        var tabla = ConstruirTabla(page, pageSize);
+        var tabla = ConstruirTabla(page, pageSize, termino, fechaInicio, fechaFin, soloDisponibles);
         return PartialView("_Tabla", tabla);
     }
 
-    public ActionResult Index(int page = 1, int pageSize = 5)
+    public ActionResult Index(int page = 1, int pageSize = 5, string? termino = null, DateTime? fechaInicio = null,
+        DateTime? fechaFin = null, bool? soloDisponibles = null)
     {
-        var tabla = ConstruirTabla(page, pageSize);
+        var tabla = ConstruirTabla(page, pageSize, termino, fechaInicio, fechaFin, soloDisponibles);
 
         if (TempData.ContainsKey("Id"))
             ViewBag.Id = TempData["Id"];
         if (TempData.ContainsKey("Mensaje"))
             ViewBag.Mensaje = TempData["Mensaje"];
+
+        ViewData["Termino"] = termino;
+        ViewData["FechaInicio"] = fechaInicio;
+        ViewData["FechaFin"] = fechaFin;
+        ViewData["SoloDisponibles"] = soloDisponibles;
 
         return View(tabla);
     }
@@ -57,6 +65,7 @@ public class InmuebleController : Controller
                 TempData["Mensaje"] = "Inmueble creado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
+
             ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto");
             return View(inmueble);
         }
@@ -98,7 +107,9 @@ public class InmuebleController : Controller
             TempData["Error"] = "Inmueble no encontrado para edición.";
             return RedirectToAction(nameof(Index));
         }
-        ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto", inmueble.PropietarioId);
+
+        ViewBag.Propietarios =
+            new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto", inmueble.PropietarioId);
         return View(inmueble);
     }
 
@@ -115,13 +126,16 @@ public class InmuebleController : Controller
                 TempData["Mensaje"] = "Datos guardados correctamente.";
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto", inmueble.PropietarioId);
+
+            ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto",
+                inmueble.PropietarioId);
             return View(inmueble);
         }
         catch
         {
             TempData["Error"] = "Hubo un error al editar el Inmueble.";
-            ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewBag.Propietarios = new SelectList(repoPropietario.ObtenerTodos(), "Id", "NombreCompleto",
+                inmueble.PropietarioId);
             return View(inmueble);
         }
     }
@@ -158,9 +172,10 @@ public class InmuebleController : Controller
         }
     }
 
-    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize)
+    private TablaViewModel<Inmueble> ConstruirTabla(int page, int pageSize, string? termino, DateTime? fechaInicio,
+        DateTime? fechaFin, bool? soloDisponibles)
     {
-        var lista = repositorio.Paginar(page, pageSize);
+        var lista = repositorio.Paginar(page, pageSize, termino, fechaInicio, fechaFin, soloDisponibles);
 
         var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
         {
@@ -168,19 +183,28 @@ public class InmuebleController : Controller
             { "Dirección", l.Direccion },
             { "Precio", l.Precio },
             { "Ambientes", l.Ambientes },
-            { "Estado", l.Estado
-                ? "<span class='badge bg-success'>Disponible</span>"
-                : "<span class='badge bg-danger'>Inactivo</span>" },
-            { "Portada", !string.IsNullOrEmpty(l.Portada)
-            ? $"<img src='{l.Portada}' alt='Portada del inmueble' style='max-height:50px; max-width:50px; object-fit:cover; border-radius:4px;' />"
-            : "<span>Sin Portada</span>" },
+            {
+                "Disponibilidad", l.Disponibilidad switch
+                {
+                    "Disponible" => "<span class='badge bg-success'>Disponible</span>",
+                    "Ocupado" => "<span class='badge bg-danger'>Ocupado</span>",
+                    _ => "<span class='badge bg-secondary'>Desconocido</span>"
+                }
+            },
+            {
+                "Portada", !string.IsNullOrEmpty(l.Portada)
+                    ? $"<img src='{l.Portada}' alt='Portada del inmueble' style='max-height:50px; max-width:50px; object-fit:cover; border-radius:4px;' />"
+                    : "<span>Sin Portada</span>"
+            },
             { "Propietario", l.Propietario?.NombreCompleto },
-            { "Acciones", $@"
-                <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
-                <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-                <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
-            " }
+            {
+                "Acciones", $@"
+            <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
+            <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+            <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
+            <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
+        "
+            }
         });
 
         return tabla;
@@ -199,10 +223,11 @@ public class InmuebleController : Controller
     {
         try
         {
-            var inmueble = repositorio.ObtenerPorId(entidad.Id);
+            var inmueble = repositorio.ObtenerPorId(entidad.InmuebleId);
             if (inmueble != null && inmueble.Portada != null)
             {
-                string rutaEliminar = Path.Combine(environment.WebRootPath, "Uploads", "Inmuebles", Path.GetFileName(inmueble.Portada));
+                string rutaEliminar = Path.Combine(environment.WebRootPath, "Uploads", "Inmuebles",
+                    Path.GetFileName(inmueble.Portada));
                 System.IO.File.Delete(rutaEliminar);
             }
 
@@ -214,17 +239,20 @@ public class InmuebleController : Controller
                 {
                     Directory.CreateDirectory(path);
                 }
+
                 path = Path.Combine(path, "Inmuebles");
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
                 }
+
                 string fileName = "portada_" + entidad.InmuebleId + Path.GetExtension(entidad.Archivo.FileName);
                 string rutaFisicaCompleta = Path.Combine(path, fileName);
                 using (var stream = new FileStream(rutaFisicaCompleta, FileMode.Create))
                 {
                     entidad.Archivo.CopyTo(stream);
                 }
+
                 entidad.Url = Path.Combine("/Uploads/Inmuebles", fileName);
             }
             else
@@ -242,6 +270,4 @@ public class InmuebleController : Controller
             return RedirectToAction(nameof(Imagenes), new { id = entidad.InmuebleId });
         }
     }
-
-
 }

@@ -16,23 +16,45 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario"
-            value="@ViewData["Termino"]" />
-        <button type="submit" class="btn btn-primary">Buscar</button>
+@{
+    var termino = ViewData["Termino"] as string;
+    var fechaInicio = ViewData["FechaInicio"] as DateTime?;
+    var fechaFin = ViewData["FechaFin"] as DateTime?;
+    var soloDisponibles = ViewData["SoloDisponibles"] as bool?;
+}
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label>Búsqueda</label>
+        <input type="text" id="filtro-termino" class="form-control" placeholder="Dirección, precio o propietario"
+               value="@termino"/>
     </div>
-</form>
+    <div class="col-md-3">
+        <label>Fecha Inicio</label>
+        <input type="date" id="filtro-fecha-inicio" class="form-control"
+               value="@(fechaInicio?.ToString("yyyy-MM-dd"))"/>
+    </div>
+    <div class="col-md-3">
+        <label>Fecha Fin</label>
+        <input type="date" id="filtro-fecha-fin" class="form-control" value="@(fechaFin?.ToString("yyyy-MM-dd"))"/>
+    </div>
+    <div class="col-md-3">
+        <label>Disponibilidad</label>
+        <select id="filtro-disponibilidad" class="form-select">
+            <option value="" selected="@(soloDisponibles == null)">-- Todos --</option>
+            <option value="true" selected="@(soloDisponibles == true)">Disponibles</option>
+            <option value="false" selected="@(soloDisponibles == false)">Ocupados</option>
+        </select>
+    </div>
+</div>
 
 <p>
     <a asp-action="Create" class="btn btn-success">Crear Nuevo Inmueble</a>
 </p>
 
-
 <div id="tabla-inmueble">
-    <partial name="_Tabla" model="Model" />
+    <partial name="_Tabla" model="Model"/>
 </div>
-
 
 @section Scripts {
     <script src="~/js/tabla.js"></script>
@@ -40,8 +62,20 @@
         document.addEventListener("DOMContentLoaded", () => {
             const tablaInmuebles = initTabla({
                 endpoint: "/Inmueble/Filtrar",
-                containerId: "tabla-inmueble"
+                containerId: "tabla-inmueble",
+                extraParamsFn: () => {
+                    const term = document.getElementById("filtro-termino")?.value || "";
+                    const fi = document.getElementById("filtro-fecha-inicio")?.value || "";
+                    const ff = document.getElementById("filtro-fecha-fin")?.value || "";
+                    const disp = document.getElementById("filtro-disponibilidad")?.value || "";
+                    return {termino: term, fechaInicio: fi, fechaFin: ff, soloDisponibles: disp};
+                }
             });
+
+            document.getElementById("filtro-termino")?.addEventListener("input", () => tablaInmuebles.init(1));
+            document.getElementById("filtro-fecha-inicio")?.addEventListener("change", () => tablaInmuebles.init(1));
+            document.getElementById("filtro-fecha-fin")?.addEventListener("change", () => tablaInmuebles.init(1));
+            document.getElementById("filtro-disponibilidad")?.addEventListener("change", () => tablaInmuebles.init(1));
 
             tablaInmuebles.init(1);
         });

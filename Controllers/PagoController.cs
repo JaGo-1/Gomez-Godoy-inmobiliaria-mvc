@@ -15,7 +15,8 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
 
-        public PagoController(IRepositoryPago repo, IRepositoryContrato repoContrato, IAuditoriaService auditoriaService, IConfiguration config)
+        public PagoController(IRepositoryPago repo, IRepositoryContrato repoContrato,
+            IAuditoriaService auditoriaService, IConfiguration config)
         {
             _repositorio = repo;
             _repoContrato = repoContrato;
@@ -100,7 +101,10 @@ namespace inmobiliaria_mvc.Controllers
         public ActionResult Create()
         {
             var contratos = _repoContrato.ObtenerTodos()
-                .Select(c => new { c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion })
+                .Select(c => new
+                {
+                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion");
             return View();
@@ -129,8 +133,12 @@ namespace inmobiliaria_mvc.Controllers
                 TempData["Mensaje"] = "Pago registrado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
+
             var contratos = _repoContrato.ObtenerTodos()
-                .Select(c => new { c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion })
+                .Select(c => new
+                {
+                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion", pago.ContratoId);
             return View(pago);
@@ -144,8 +152,12 @@ namespace inmobiliaria_mvc.Controllers
                 TempData["Error"] = "Pago no encontrado para edición.";
                 return RedirectToAction(nameof(Index));
             }
+
             var contratos = _repoContrato.ObtenerTodos()
-                .Select(c => new { c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion })
+                .Select(c => new
+                {
+                    c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                })
                 .ToList();
             ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion", pago.ContratoId);
             return View(pago);
@@ -193,7 +205,11 @@ namespace inmobiliaria_mvc.Controllers
             {
                 TempData["Error"] = "Error al actualizar el pago.";
                 var contratos = _repoContrato.ObtenerTodos()
-                    .Select(c => new { c.Id, Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion })
+                    .Select(c => new
+                    {
+                        c.Id,
+                        Descripcion = c.Inquilino.Nombre + " " + c.Inquilino.Apellido + " - " + c.Inmueble.Direccion
+                    })
                     .ToList();
                 ViewBag.Contrato = new SelectList(contratos, "Id", "Descripcion", pago.ContratoId);
                 return View(pago);
@@ -218,13 +234,13 @@ namespace inmobiliaria_mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Registrar(int contratoId, int numeroPago, string? detalle = null)
+        public ActionResult Registrar(int contratoId, int numeroPago, int idInquilino, string? detalle = null)
         {
             var contrato = _repoContrato.ObtenerPorId(contratoId);
             if (contrato == null)
             {
                 TempData["Error"] = "Contrato no encontrado.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Inquilino");
             }
 
             var pagos = _repositorio.ObtenerPorContrato(contratoId, incluirAnulados: true);
@@ -233,7 +249,7 @@ namespace inmobiliaria_mvc.Controllers
             if (pagoPendiente == null)
             {
                 TempData["Error"] = $"No hay pago pendiente para el mes {numeroPago} en el contrato {contratoId}.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Details", "Inquilino", new { id = idInquilino });
             }
 
             pagoPendiente.Detalle = detalle ?? (pagoPendiente.EsMulta
@@ -251,14 +267,14 @@ namespace inmobiliaria_mvc.Controllers
             }
             else
             {
-                var siguienteId = _repositorio.CrearSiguientePagoSiAplica(contratoId, numeroPago, contrato.Monto, contrato.Fecha_inicio, contrato.Fecha_fin);
+                var siguienteId = _repositorio.CrearSiguientePagoSiAplica(contratoId, numeroPago, contrato.Monto,
+                    contrato.Fecha_inicio, contrato.Fecha_fin);
                 TempData["Mensaje"] = siguienteId.HasValue
                     ? $"Pago registrado correctamente. Siguiente pago creado (Mes {numeroPago + 1})."
                     : "Pago registrado correctamente. Contrato completado.";
             }
 
-            return RedirectToAction(nameof(Details), new { id = pagoPendiente.IdPago });
-
+            return RedirectToAction("Details", "Inquilino", new { id = idInquilino });
         }
     }
 }

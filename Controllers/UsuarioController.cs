@@ -45,7 +45,7 @@ public class UsuarioController : Controller
     public ActionResult Create()
     {
         ViewBag.Roles = Usuario.ObtenerRoles();
-        return View();
+        return View(new Usuario());
     }
 
     // POST: Usuarios/Create
@@ -54,8 +54,11 @@ public class UsuarioController : Controller
     [Authorize(Policy = "Administrador")]
     public ActionResult Create(Usuario u)
     {
+        ViewBag.Roles = Usuario.ObtenerRoles();
+
         if (!ModelState.IsValid)
-            return View();
+            return View(u);
+
         try
         {
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
@@ -65,21 +68,22 @@ public class UsuarioController : Controller
                 iterationCount: 1000,
                 numBytesRequested: 256 / 8));
             u.Password = hashed;
+
             u.Rol = User.IsInRole("Administrador") ? u.Rol : (int)enRoles.Empleado;
-            var nbreRnd = Guid.NewGuid();
+
             int res = repository.Alta(u);
+
             if (u.AvatarFile != null && u.Id > 0)
             {
                 string wwwPath = environment.WebRootPath;
                 string path = Path.Combine(wwwPath, "Uploads");
                 if (!Directory.Exists(path))
-                {
                     Directory.CreateDirectory(path);
-                }
 
                 string fileName = "avatar_" + u.Id + Path.GetExtension(u.AvatarFile.FileName);
                 string pathCompleto = Path.Combine(path, fileName);
                 u.Avatar = Path.Combine("/Uploads", fileName);
+
                 using (FileStream stream = new FileStream(pathCompleto, FileMode.Create))
                 {
                     u.AvatarFile.CopyTo(stream);
@@ -88,24 +92,27 @@ public class UsuarioController : Controller
                 repository.Modificacion(u);
             }
 
+            TempData["Mensaje"] = "Usuario creado correctamente.";
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
-            ViewBag.Roles = Usuario.ObtenerRoles();
-            return View();
+            TempData["Error"] = "Ocurrió un error al crear el usuario.";
+            return View(u);
         }
     }
 
-    // GET: Usuarios/Edit/5
+
+    // GET: Usuario/Perfil
     [Authorize]
     public ActionResult Perfil()
     {
         ViewData["Title"] = "Mi perfil";
         var u = repository.ObtenerPorEmail(User.Identity.Name);
         ViewBag.Roles = Usuario.ObtenerRoles();
-        return ViewBag("Edit", u);
+        return View("Perfil", u);
     }
+
 
     // GET: Usuarios/Edit/5
     [Authorize(Policy = "Administrador")]
@@ -178,14 +185,13 @@ public class UsuarioController : Controller
 
                 repository.Modificacion(usuarioDb);
                 TempData["Mensaje"] = "Datos guardados correctamente.";
+                return RedirectToAction(nameof(Index));
             }
             else
             {
                 ViewBag.Roles = Usuario.ObtenerRoles();
                 return View(vista, usuarioDb);
             }
-
-            return RedirectToAction(vista);
         }
         catch (Exception)
         {
@@ -195,32 +201,40 @@ public class UsuarioController : Controller
         }
     }
 
-    // GET: Usuarios/Delete/5
-    [Authorize(Policy = "Administrador")]
-    public ActionResult Delete(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    // POST: Usuarios/Delete/5
+    // POST: Usuario/Delete/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = "Administrador")]
-    public ActionResult Delete(int id, Usuario usuario)
+    public IActionResult Delete(int id)
     {
         try
         {
-            var ruta = Path.Combine(environment.WebRootPath, "Uploads",
-                $"avatar_{id}" + Path.GetExtension(usuario.Avatar));
-            if (System.IO.File.Exists(ruta))
-                System.IO.File.Delete(ruta);
+            var usuario = repository.ObtenerPorId(id);
+            if (usuario == null)
+            {
+                TempData["Error"] = "El usuario no existe o ya fue eliminado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Eliminar el avatar si existe
+            if (!string.IsNullOrEmpty(usuario.Avatar))
+            {
+                string ruta = Path.Combine(environment.WebRootPath, usuario.Avatar.TrimStart('/'));
+                if (System.IO.File.Exists(ruta))
+                {
+                    System.IO.File.Delete(ruta);
+                }
+            }
+
             repository.Baja(id);
-            return RedirectToAction(nameof(Index));
+            TempData["Mensaje"] = "Usuario eliminado correctamente.";
         }
-        catch
+        catch (Exception)
         {
-            return View();
+            TempData["Error"] = "Ocurrió un error al intentar eliminar el usuario.";
         }
+
+        return RedirectToAction(nameof(Index));
     }
 
     [Authorize]
@@ -389,5 +403,101 @@ public class UsuarioController : Controller
             iterationCount: 1000,
             numBytesRequested: 256 / 8));
         return hashed;
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult EditarPerfil(Usuario u)
+    {
+        try
+        {
+            var usuarioActual = repository.ObtenerPorEmail(User.Identity.Name);
+            if (usuarioActual == null) return RedirectToAction("Login", "Usuario");
+
+            usuarioActual.Nombre = u.Nombre;
+            usuarioActual.Apellido = u.Apellido;
+            usuarioActual.Email = u.Email;
+
+            if (u.AvatarFile != null)
+            {
+                string wwwPath = environment.WebRootPath;
+                string path = Path.Combine(wwwPath, "Uploads");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                string fileName = $"avatar_{usuarioActual.Id}{Path.GetExtension(u.AvatarFile.FileName)}";
+                string pathCompleto = Path.Combine(path, fileName);
+                usuarioActual.Avatar = Path.Combine("/Uploads", fileName);
+                using (FileStream stream = new FileStream(pathCompleto, FileMode.Create))
+                {
+                    u.AvatarFile.CopyTo(stream);
+                }
+            }
+
+            repository.Modificacion(usuarioActual);
+            TempData["Mensaje"] = "Datos guardados correctamente.";
+            return RedirectToAction(nameof(Perfil));
+        }
+        catch (Exception)
+        {
+            TempData["Error"] = "Ocurrió un error al guardar los datos.";
+            return RedirectToAction(nameof(Perfil));
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public IActionResult CambiarPassword(string PasswordActual, string PasswordNueva, string PasswordConfirmacion)
+    {
+        try
+        {
+            var usuario = repository.ObtenerPorEmail(User.Identity.Name);
+            if (usuario == null)
+            {
+                TempData["Error"] = "Usuario no encontrado.";
+                return RedirectToAction("Perfil");
+            }
+
+            if (PasswordNueva != PasswordConfirmacion)
+            {
+                TempData["Error"] = "La nueva contraseña y la confirmación no coinciden.";
+                return RedirectToAction("Perfil");
+            }
+
+            string hashedActual = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: PasswordActual,
+                salt: System.Text.Encoding.ASCII.GetBytes(configuration["Salt"]),
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 1000,
+                numBytesRequested: 256 / 8));
+
+            if (usuario.Password != hashedActual)
+            {
+                TempData["Error"] = "La contraseña actual no es correcta.";
+                return RedirectToAction("Perfil");
+            }
+
+            string hashedNueva = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: PasswordNueva,
+                salt: System.Text.Encoding.ASCII.GetBytes(configuration["Salt"]),
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 1000,
+                numBytesRequested: 256 / 8));
+
+            usuario.Password = hashedNueva;
+            repository.Modificacion(usuario);
+
+            TempData["Mensaje"] = "La contraseña fue actualizada correctamente.";
+            return RedirectToAction("Perfil");
+        }
+        catch (Exception)
+        {
+            TempData["Error"] = "Ocurrió un error al intentar actualizar la contraseña.";
+            return RedirectToAction("Perfil");
+        }
     }
 }

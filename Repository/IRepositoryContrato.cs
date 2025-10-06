@@ -14,5 +14,7 @@ namespace inmobiliaria_mvc.Repository
                 int CalcularMesesAdeudados(Contrato contrato, DateTime fechaTerminacion);
                 int CalcularMultaMeses(Contrato contrato, DateTime fechaTerminacion);
                 decimal CalcularMultaImporte(Contrato contrato, DateTime fechaTerminacion);
+                IList<Contrato> ObtenerContratosPorInquilino(int idInquilino);
+
         }
 }
