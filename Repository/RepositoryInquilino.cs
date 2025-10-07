@@ -37,9 +37,11 @@ namespace inmobiliaria_mvc.Repository
                         res = Convert.ToInt32(id);
                         inquilino.IdInquilino = res;
                     }
+
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -57,6 +59,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -85,6 +88,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -93,7 +97,8 @@ namespace inmobiliaria_mvc.Repository
             var res = new List<Inquilino>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE Estado = true;";
+                string sql =
+                    "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE Estado = true;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     conn.Open();
@@ -112,9 +117,11 @@ namespace inmobiliaria_mvc.Repository
                             });
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -123,7 +130,8 @@ namespace inmobiliaria_mvc.Repository
             Inquilino? inquilino = null;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE IdInquilino = @id;";
+                string sql =
+                    "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE IdInquilino = @id;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("id", id);
@@ -143,13 +151,15 @@ namespace inmobiliaria_mvc.Repository
                             };
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return inquilino;
         }
 
-        public PagedResult<Inquilino> Paginar(int pagina, int tamPagina)
+        public PagedResult<Inquilino> Paginar(int pagina, int tamPagina, string? termino = null)
         {
             var res = new List<Inquilino>();
             int totalItems = 0;
@@ -157,18 +167,45 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 conn.Open();
-                string countSql = "SELECT COUNT (*) FROM inquilino WHERE estado = true";
+
+                var whereConditions = new List<string> { "Estado = true" };
+
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    whereConditions.Add($@"(LOWER(Dni) LIKE LOWER(@termino) 
+                                           OR LOWER(Nombre) LIKE LOWER(@termino)
+                                           OR LOWER(Apellido) LIKE LOWER(@termino)
+                                           OR LOWER(Email) LIKE LOWER(@termino))");
+                }
+
+                string whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+
+                string countSql = $"SELECT COUNT(*) FROM Inquilino {whereClause}";
                 using (var countCmd = new NpgsqlCommand(countSql, conn))
                 {
+                    if (!string.IsNullOrEmpty(termino))
+                    {
+                        countCmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    }
+
                     totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
                 }
 
-                string sql = "SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email FROM Inquilino WHERE Estado = true ORDER BY IdInquilino LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+                string sql = $@"SELECT IdInquilino, Dni, Nombre, Apellido, Telefono, Email 
+                                FROM Inquilino 
+                                {whereClause}
+                                ORDER BY IdInquilino 
+                                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("pagina", pagina);
                     cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    if (!string.IsNullOrEmpty(termino))
+                    {
+                        cmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    }
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -176,7 +213,7 @@ namespace inmobiliaria_mvc.Repository
                         {
                             res.Add(new Inquilino
                             {
-                                IdInquilino = (int)reader.GetInt64(0),
+                                IdInquilino = reader.GetInt32(0),
                                 Dni = reader.GetString(1),
                                 Nombre = reader.GetString(2),
                                 Apellido = reader.GetString(3),
@@ -186,6 +223,7 @@ namespace inmobiliaria_mvc.Repository
                         }
                     }
                 }
+
                 conn.Close();
             }
 

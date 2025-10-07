@@ -15,7 +15,8 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryInmueble _repoInmueble;
         private readonly IConfiguration _config;
 
-        public PropietarioController(ILogger<PropietarioController> logger, IRepositoryPropietario repo, IRepositoryInmueble repoInmueble, IConfiguration config)
+        public PropietarioController(ILogger<PropietarioController> logger, IRepositoryPropietario repo,
+            IRepositoryInmueble repoInmueble, IConfiguration config)
         {
             _logger = logger;
             _repo = repo;
@@ -25,17 +26,20 @@ namespace inmobiliaria_mvc.Controllers
 
         // GET: Propietario
 
-        public ActionResult Filtrar(int page = 1, int pageSize = 10)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
             return PartialView("_Tabla", tabla);
         }
-        public ActionResult Index(int page = 1, int pageSize = 10)
+
+        public ActionResult Index(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
 
             if (TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
+
+            ViewData["Termino"] = termino;
 
             return View(tabla);
         }
@@ -129,6 +133,7 @@ namespace inmobiliaria_mvc.Controllers
                     TempData["Error"] = "No se ha encontrado el propietario.";
                     return RedirectToAction(nameof(Index));
                 }
+
                 return View(propietario);
             }
             catch (Exception e)
@@ -153,6 +158,7 @@ namespace inmobiliaria_mvc.Controllers
                     TempData["Mensaje"] = "Datos guardados correctamente.";
                     return RedirectToAction(nameof(Index));
                 }
+
                 return View(propietario);
             }
             catch (Exception ex)
@@ -181,25 +187,26 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        private TablaViewModel<Propietario> ConstruirTabla(int page, int pageSize)
+        private TablaViewModel<Propietario> ConstruirTabla(int page, int pageSize, string? termino)
         {
-            var propietarios = _repo.Paginar(page, pageSize);
+            var propietarios = _repo.Paginar(page, pageSize, termino);
             var tabla = TablaHelper.MapToTablaViewModel(propietarios, p => new Dictionary<string, object>
             {
                 { "Código", p.Id },
-                { "DNI", p.Dni},
-                { "Nombre", $"{p.Nombre} {p.Apellido}"},
-                {"Teléfono", p.Telefono},
-                {"Email", p.Email},
-                { "Acciones", $@"
+                { "DNI", p.Dni },
+                { "Nombre", $"{p.Nombre} {p.Apellido}" },
+                { "Teléfono", p.Telefono },
+                { "Email", p.Email },
+                {
+                    "Acciones", $@"
                     <a href='/Propietario/Details/{p.Id}' class='btn btn-info btn-sm'>Detalles</a>
                     <a href='/Propietario/Edit/{p.Id}' class='btn btn-warning btn-sm'>Editar</a>
                     {BotonHelper.BotonEliminar("Propietario", p.Id, $"Propietario {p.Nombre} {p.Apellido}")}
-                " }
+                "
+                }
             });
 
             return tabla;
         }
-
     }
 }

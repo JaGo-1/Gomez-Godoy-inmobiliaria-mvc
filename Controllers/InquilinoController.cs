@@ -23,19 +23,21 @@ namespace inmobiliaria_mvc.Controllers
             _config = config;
         }
 
-        public ActionResult Filtrar(int page = 1, int pageSize = 10)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
             return PartialView("_Tabla", tabla);
         }
 
-        public ActionResult Index(int page = 1, int pageSize = 10)
+        public ActionResult Index(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
             if (TempData.ContainsKey("Id"))
                 ViewBag.Id = TempData["Id"];
             if (TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
+
+            ViewData["Termino"] = termino;
 
             return View(tabla);
         }
@@ -184,9 +186,9 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize)
+        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize, string? termino)
         {
-            var lista = repositorio.Paginar(page, pageSize);
+            var lista = repositorio.Paginar(page, pageSize, termino);
             var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
             {
                 { "Código", l.IdInquilino },
@@ -199,7 +201,8 @@ namespace inmobiliaria_mvc.Controllers
                     <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
                     <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
                     {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}
-                " }
+                "
+                }
             });
 
             return tabla;

@@ -5,6 +5,5 @@ namespace inmobiliaria_mvc.Repository;
 
 public interface IRepositoryInquilino : IRepository<Inquilino>
 {
-    PagedResult<Inquilino> Paginar(int pagina, int tamPagina);
-
+    PagedResult<Inquilino> Paginar(int pagina, int tamPagina, string? termino = null);
 }

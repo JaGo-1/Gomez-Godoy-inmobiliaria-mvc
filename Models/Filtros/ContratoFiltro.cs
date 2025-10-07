@@ -8,6 +8,7 @@ namespace inmobiliaria_mvc.Models.Filtros
         public DateTime? Hasta { get; set; }
         public string? Inquilino { get; set; }
         public string? Direccion { get; set; }
+        public string? Termino  { get; set; }
         public ContratoFiltro() { }
     }
 }

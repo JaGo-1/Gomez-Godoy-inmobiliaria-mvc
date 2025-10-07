@@ -41,6 +41,7 @@ namespace inmobiliaria_mvc.Controllers
         (
             int page = 1,
             int pageSize = 10,
+            string? termino = null,
             bool? disponible = null,
             int? plazo = null,
             DateTime? desde = null,
@@ -53,6 +54,7 @@ namespace inmobiliaria_mvc.Controllers
             {
                 var filtro = new ContratoFiltro
                 {
+                    Termino = termino,
                     Disponible = disponible,
                     Plazo = plazo,
                     Desde = desde,
@@ -63,6 +65,7 @@ namespace inmobiliaria_mvc.Controllers
 
                 var tabla = ConstruirTabla(page, pageSize, filtro);
                 ViewData["Disponible"] = disponible;
+                ViewData["Termino"] = termino;
 
                 return PartialView("_Tabla", tabla);
             }
@@ -76,6 +79,7 @@ namespace inmobiliaria_mvc.Controllers
         public ActionResult Index(
             int page = 1,
             int pageSize = 10,
+            string? termino = null,
             bool? disponible = null,
             int? plazo = null,
             DateTime? desde = null,
@@ -86,6 +90,7 @@ namespace inmobiliaria_mvc.Controllers
         {
             var filtro = new ContratoFiltro
             {
+                Termino = termino,
                 Disponible = disponible,
                 Plazo = plazo,
                 Desde = desde,
@@ -100,6 +105,7 @@ namespace inmobiliaria_mvc.Controllers
                 ViewBag.Mensaje = TempData["Mensaje"];
 
             ViewData["Disponible"] = disponible;
+            ViewData["Termino"] = termino;
 
             return View(tabla);
         }
@@ -426,11 +432,13 @@ namespace inmobiliaria_mvc.Controllers
                 { "Monto", c.Monto.ToString("C") },
                 { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
                 { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
-                { "Estado", c.Estado
-                    ? "<span class='badge bg-success'>Vigente</span>"
-                    : "<span class='badge bg-danger'>Inactivo</span>"
+                {
+                    "Estado", c.Estado
+                        ? "<span class='badge bg-success'>Vigente</span>"
+                        : "<span class='badge bg-danger'>Inactivo</span>"
                 },
-                { "Acciones", $@"
+                {
+                    "Acciones", $@"
                     <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
                     <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
                     {BotonHelper.BotonEliminar(
@@ -438,11 +446,11 @@ namespace inmobiliaria_mvc.Controllers
                         c.Id,
                         $"Contrato del inmueble {c.Inmueble?.Direccion ?? "(sin dirección)"} - Inquilino {c.Inquilino?.Nombre} {c.Inquilino?.Apellido}"
                     )}
-                " }
+                "
+                }
             });
 
             return tabla;
         }
-
     }
 }

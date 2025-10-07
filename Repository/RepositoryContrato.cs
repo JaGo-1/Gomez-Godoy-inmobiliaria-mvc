@@ -270,6 +270,7 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
+
         public PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro)
         {
             var res = new List<Contrato>();
@@ -278,18 +279,20 @@ namespace inmobiliaria_mvc.Repository
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
 
-            var (whereClause, parameters) = ConstruirFiltros(filtro);
+            var (whereClause, parameters, joinClause) = ConstruirFiltros(filtro);
 
             string countSql = $@"
             SELECT COUNT(*) 
             FROM contrato c
             INNER JOIN inmueble i ON c.idinmueble = i.id
             INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {joinClause}
             {whereClause}";
 
             using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
-                countCmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value)).ToArray());
+                countCmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value))
+                    .ToArray());
                 totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
             }
 
@@ -299,13 +302,15 @@ namespace inmobiliaria_mvc.Repository
             FROM contrato c
             INNER JOIN inmueble i ON c.idinmueble = i.id
             INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {joinClause}
             {whereClause}
             ORDER BY c.id
             LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
             using (var cmd = new NpgsqlCommand(selectSql, conn))
             {
-                cmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value)).ToArray());
+                cmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value))
+                    .ToArray());
                 cmd.Parameters.AddWithValue("pagina", pagina);
                 cmd.Parameters.AddWithValue("tamPagina", tamPagina);
 
@@ -411,10 +416,13 @@ namespace inmobiliaria_mvc.Repository
         {
             return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
         }
-        private (string whereClause, List<NpgsqlParameter> parameters) ConstruirFiltros(ContratoFiltro filtro)
+
+        private (string whereClause, List<NpgsqlParameter> parameters, string joinClause) ConstruirFiltros(
+            ContratoFiltro filtro)
         {
             var whereConditions = new List<string>();
             var parameters = new List<NpgsqlParameter>();
+            var joinConditions = new List<string>();
 
             if (filtro.Disponible.HasValue)
             {
@@ -424,7 +432,8 @@ namespace inmobiliaria_mvc.Repository
 
             if (filtro.Plazo.HasValue)
             {
-                whereConditions.Add("c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
+                whereConditions.Add(
+                    "c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
                 parameters.Add(new NpgsqlParameter("plazo", filtro.Plazo.Value));
             }
 
@@ -452,11 +461,26 @@ namespace inmobiliaria_mvc.Repository
                 parameters.Add(new NpgsqlParameter("direccion", $"%{filtro.Direccion}%"));
             }
 
+            if (!string.IsNullOrEmpty(filtro.Termino))
+            {
+                joinConditions.Add("INNER JOIN propietario p ON i.propietarioid = p.id");
+                whereConditions.Add($@"(LOWER(i.direccion) LIKE LOWER(@termino) 
+                                       OR CAST(c.monto AS TEXT) LIKE @termino_monto
+                                       OR LOWER(p.nombre) LIKE LOWER(@termino_prop)
+                                       OR LOWER(p.apellido) LIKE LOWER(@termino_prop))");
+                var likeTerm = $"%{filtro.Termino}%";
+                parameters.Add(new NpgsqlParameter("@termino", likeTerm));
+                parameters.Add(new NpgsqlParameter("@termino_monto", likeTerm));
+                parameters.Add(new NpgsqlParameter("@termino_prop", likeTerm));
+            }
+
             string whereClause = whereConditions.Any()
                 ? "WHERE " + string.Join(" AND ", whereConditions)
                 : "";
 
-            return (whereClause, parameters);
+            string joinClause = string.Join(" ", joinConditions);
+
+            return (whereClause, parameters, joinClause);
         }
 
         public IList<Contrato> ObtenerContratosPorInquilino(int idInquilino)

@@ -20,41 +20,18 @@
 
 @{
     var admin = (await AuthorizationService.AuthorizeAsync(User, "Administrador")).Succeeded;
-}
-
-
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario"
-            value="@ViewData["Termino"]" />
-        <button type="submit" class="btn btn-primary">Buscar</button>
-    </div>
-</form>
-
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
-
-    @if (admin)
-    {
-        <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="contrato" class="btn btn-success">Ver historial de
-            cambios</a>
-    }
-
-</p>
-
-@{
+    var termino = ViewData["Termino"] as string;
     var disponible = ViewData["Disponible"] as bool?;
-    var opciones = new List<SelectListItem>
-{
-new SelectListItem { Text = "Todos", Value = "", Selected = disponible == null },
-new SelectListItem { Text = "Contratos vigentes", Value = "true", Selected = disponible == true },
-new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = disponible == false }
-};
 }
 
 <!-- Filtros -->
 <div class="row mb-3">
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <label>Búsqueda</label>
+        <input type="text" id="filtro-termino" class="form-control" placeholder="Dirección, precio o propietario"
+            value="@termino" />
+    </div>
+    <div class="col-md-3">
         <label>Disponibilidad</label>
         <select id="filtro-disponible" class="form-select">
             <option value="true" selected="@(disponible == true)">Vigentes</option>
@@ -62,8 +39,7 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
             <option value="" selected="@(disponible == null)">-- Todos --</option>
         </select>
     </div>
-
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label>Plazo (días)</label>
         <select id="filtro-plazo" class="form-select">
             <option value="">-- Todos --</option>
@@ -72,8 +48,7 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
             <option value="90">90 días</option>
         </select>
     </div>
-
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label>Plazo personalizado</label>
         <input type="number" id="filtro-plazo-custom" class="form-control" placeholder="Ej: 45">
     </div>
@@ -90,6 +65,16 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
     </div>
 </div>
 
+<p>
+    <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
+
+    @if (admin)
+    {
+        <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="contrato" class="btn btn-success">Ver historial de
+            cambios</a>
+    }
+</p>
+
 <!-- Tabla -->
 <div id="tabla-contratos">
     <partial name="_Tabla" model="Model" />
@@ -103,12 +88,14 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
                 endpoint: "/Contrato/Filtrar",
                 containerId: "tabla-contratos",
                 extraParamsFn: () => {
+                    const term = document.getElementById("filtro-termino")?.value || "";
                     const disponible = document.getElementById("filtro-disponible")?.value || "";
                     const plazoSelect = document.getElementById("filtro-plazo")?.value || "";
                     const plazoCustom = document.getElementById("filtro-plazo-custom")?.value || "";
                     const desde = document.getElementById("filtro-desde")?.value || "";
                     const hasta = document.getElementById("filtro-hasta")?.value || "";
                     return {
+                        termino: term,
                         disponible,
                         plazo: plazoCustom || plazoSelect,
                         desde,
@@ -118,6 +105,7 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
             });
 
             // Filtros dinámicos
+            document.getElementById("filtro-termino")?.addEventListener("input", () => tablaContratos.init(1));
             document.getElementById("filtro-disponible")?.addEventListener("change", () => tablaContratos.init(1));
             document.getElementById("filtro-plazo")?.addEventListener("change", () => tablaContratos.init(1));
             document.getElementById("filtro-plazo-custom")?.addEventListener("input", () => tablaContratos.init(1));
