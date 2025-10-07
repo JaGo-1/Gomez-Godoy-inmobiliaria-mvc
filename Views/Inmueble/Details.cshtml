@@ -19,6 +19,38 @@
                     <p><strong>Ambientes:</strong> @Model.Inmueble.Ambientes</p>
                     <p><strong>Uso:</strong> @Model.Inmueble.Uso</p>
                     <p><strong>Tipo:</strong> @Model.Inmueble.Tipo</p>
+
+                    <hr />
+                    <h6 class="text-muted mb-2">Portada</h6>
+                    @if (!string.IsNullOrEmpty(Model.Inmueble.Portada))
+                    {
+                        <img src="@Model.Inmueble.Portada" alt="Portada del Inmueble"
+                             class="img-fluid rounded mb-2 shadow-sm" />
+                    }
+                    else
+                    {
+                        <p><em>No hay imagen de portada</em></p>
+                    }
+
+                    <hr />
+                    <h6 class="text-muted mb-2">Imágenes del Inmueble</h6>
+                    <div class="d-flex flex-wrap">
+                        @if (Model.Inmueble.Imagenes != null && Model.Inmueble.Imagenes.Count > 0)
+                        {
+                            foreach (var img in Model.Inmueble.Imagenes)
+                            {
+                                <div class="m-1">
+                                    <img src="@img.Url" alt="Imagen del inmueble"
+                                         class="img-thumbnail shadow-sm"
+                                         style="width:120px; height:100px; object-fit:cover; border-radius:6px;" />
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p><em>No hay imágenes cargadas</em></p>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

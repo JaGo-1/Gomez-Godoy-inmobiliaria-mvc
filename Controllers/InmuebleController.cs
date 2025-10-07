@@ -78,11 +78,20 @@ public class InmuebleController : Controller
         }
     }
 
-    public ActionResult Details(int id)
+    public ActionResult Details(int id, [FromServices] IRepositoryImagen repoImagen)
     {
         try
         {
             var inmueble = repositorio.ObtenerPorId(id);
+            if (inmueble == null)
+            {
+                TempData["Error"] = "Inmueble no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var imagenes = repoImagen.BuscarPorInmueble(id);
+            inmueble.Imagenes = imagenes;
+
             var contratos = repoContrato.ObtenerContratosPorInmueble(id);
 
             var model = new InmuebleDetalleVM
@@ -99,6 +108,7 @@ public class InmuebleController : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+
 
     public ActionResult Edit(int id)
     {
@@ -184,12 +194,14 @@ public class InmuebleController : Controller
                     : "<span>Sin Portada</span>"
             },
             { "Propietario", l.Propietario?.NombreCompleto },
-            { "Acciones", $@"
+            {
+                "Acciones", $@"
                 <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
                 <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
                 {BotonHelper.BotonEliminar("Inmueble", l.Id, $"Inmueble {l.Direccion}")}
                 <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
-            " }
+            "
+            }
         });
 
         return tabla;
