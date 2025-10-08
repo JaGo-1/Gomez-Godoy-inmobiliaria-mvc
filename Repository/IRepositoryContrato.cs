@@ -8,6 +8,7 @@ namespace inmobiliaria_mvc.Repository
         {
                 bool ExisteSolapado(int idInmueble, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null);
                 List<Contrato> ObtenerContratosPorInmueble(int idInmueble);
+                IList<Contrato> ObtenerFechasDeContratoPorInmueble(int idInmueble);
                 PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro);
                 bool TerminarAnticipado(int contratoId, DateTime fechaTerminacion, bool pagarMultaAhora = false);
                 int CalcularMesesContrato(DateTime inicio, DateTime fin);

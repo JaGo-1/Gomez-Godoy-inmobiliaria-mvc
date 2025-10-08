@@ -118,7 +118,11 @@ namespace inmobiliaria_mvc.Controllers
                 ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion", inmuebleId);
                 ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto");
 
-                var contrato = new Contrato();
+                var contrato = new Contrato
+                {
+                    Fecha_inicio = DateTime.Today,
+                    Fecha_fin = DateTime.Today
+                };
                 if (inmuebleId.HasValue)
                 {
                     contrato.IdInmueble = inmuebleId.Value;

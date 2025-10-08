@@ -31,12 +31,13 @@
     </div>
     <div class="col-md-3">
         <label>Fecha Inicio</label>
-        <input type="date" id="filtro-fecha-inicio" class="form-control"
+        <input type="date" id="filtro-fecha-inicio" class="form-control flatpick"
             value="@(fechaInicio?.ToString("yyyy-MM-dd"))" />
     </div>
     <div class="col-md-3">
         <label>Fecha Fin</label>
-        <input type="date" id="filtro-fecha-fin" class="form-control" value="@(fechaFin?.ToString("yyyy-MM-dd"))" />
+        <input type="date" id="filtro-fecha-fin" class="form-control flatpick"
+            value="@(fechaFin?.ToString("yyyy-MM-dd"))" />
     </div>
     <div class="col-md-3">
         <label>Disponibilidad</label>
@@ -57,6 +58,7 @@
 </div>
 
 @section Scripts {
+
     <script src="~/js/tabla.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {

@@ -228,7 +228,7 @@ namespace inmobiliaria_mvc.Repository
                 {
                     string sql =
                         @"SELECT id, idinquilino, fecha_inicio, fecha_fin, monto, estado, fecha_terminacion_anticipada, multa_calculada 
-                                   FROM contrato WHERE idinmueble = @idInmueble AND estado = TRUE;";
+                        FROM contrato WHERE idinmueble = @idInmueble AND estado = TRUE;";
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
                     {
@@ -270,6 +270,51 @@ namespace inmobiliaria_mvc.Repository
                 throw;
             }
         }
+
+        public IList<Contrato> ObtenerFechasDeContratoPorInmueble(int idInmueble)
+        {
+            try
+            {
+                var contratos = new List<Contrato>();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    string sql = @"
+                        SELECT fecha_inicio, fecha_fin
+                        FROM contrato
+                        WHERE idinmueble = @idInmueble;
+                    ";
+
+                    using (var cmd = new NpgsqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idInmueble", idInmueble);
+                        conn.Open();
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var contrato = new Contrato
+                                {
+                                    Fecha_inicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                                    Fecha_fin = reader.GetDateTime(reader.GetOrdinal("fecha_fin"))
+                                };
+
+                                contratos.Add(contrato);
+                            }
+                        }
+                    }
+                }
+
+                return contratos;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error en ObtenerContratosPorInmueble: " + ex.Message);
+                throw;
+            }
+        }
+
 
         public PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro)
         {

@@ -90,6 +90,11 @@ body {
   color: #888;
 }
 
+.flatpickr-input[readonly] {
+  background-color: #fff !important;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 60px;

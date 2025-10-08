@@ -9,6 +9,7 @@
     <title>@ViewData["Title"] - inmobiliaria_mvc</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -91,12 +92,18 @@
         <div class="container"></div>
         <main role="main" class="main">
             @RenderBody()
-
-            @* Modal de confirmacion de eliminacion *@
             <partial name="_ConfirmDeleteModal" />
 
         </main>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script type="module">
+        import { inicializarCalendarioBase } from '/js/calendario/calendarioBase.js';
+        document.addEventListener("DOMContentLoaded", () => {
+            inicializarCalendarioBase(".flatpick");
+        });
+    </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/modal.js"></script>
