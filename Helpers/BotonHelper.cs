@@ -33,5 +33,22 @@ namespace inmobiliaria_mvc.Helpers
                     </a>"
                 : "";
         }
+
+        public static string BotonEditar(string controller, int id)
+        {
+            return EsAdministrador()
+                ? $"<a href='/{controller}/Edit/{id}' class='btn btn-warning btn-sm'>Editar</a>"
+                : "";
+        }
+
+        public static string BotonDetalles(string controller, int id)
+        {
+            return $"<a href='/{controller}/Details/{id}' class='btn btn-info btn-sm'>Detalles</a>";
+        }
+
+        public static string BotonRenovar(string controller, int id)
+        {
+            return $"<a href='/{controller}/Renovar/{id}' class='btn btn-success btn-sm'>Renovar</a>";
+        }
     }
 }
