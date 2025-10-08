@@ -168,6 +168,7 @@ namespace inmobiliaria_mvc.Controllers
             return View(pago);
         }
 
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id)
         {
             var pago = _repositorio.ObtenerPorId(id);
@@ -190,6 +191,7 @@ namespace inmobiliaria_mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id, Pago pago)
         {
             if (id != pago.IdPago)
@@ -324,8 +326,8 @@ namespace inmobiliaria_mvc.Controllers
                             <input type='hidden' name='numeroPago' value='{p.Pago.NumeroPago}' />
                             <button type='submit' class='btn btn-primary btn-sm'>Registrar Pago</button>
                         </form>" : "")}
-                    <a href='/Pago/Details/{p.Pago.IdPago}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Pago/Edit/{p.Pago.IdPago}' class='btn btn-warning btn-sm'>Editar</a>
+                    {BotonHelper.BotonDetalles("Pago", p.Pago.IdPago)}
+                    {BotonHelper.BotonEditar("Pago", p.Pago.IdPago)}
                     {BotonHelper.BotonEliminar("Pago", p.Pago.IdPago, $"Pago #{p.Pago.NumeroPago} del contrato {p.Pago.ContratoId}")}
                 " }
             });

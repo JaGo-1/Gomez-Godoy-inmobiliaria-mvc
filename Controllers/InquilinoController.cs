@@ -124,6 +124,7 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id)
         {
             try
@@ -145,6 +146,7 @@ namespace inmobiliaria_mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id, Inquilino entidad)
         {
             try
@@ -198,8 +200,8 @@ namespace inmobiliaria_mvc.Controllers
                 { "Email", l.Email },
                 {
                     "Acciones", $@"
-                    <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
+                    {BotonHelper.BotonDetalles("Inquilino", l.IdInquilino)}
+                    {BotonHelper.BotonEditar("Contrato", l.IdInquilino)}
                     {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}
                 "
                 }

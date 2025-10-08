@@ -123,6 +123,7 @@ namespace inmobiliaria_mvc.Controllers
 
         // GET: Propietario/Edit/:id
         [HttpGet]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id)
         {
             try
@@ -147,6 +148,7 @@ namespace inmobiliaria_mvc.Controllers
         // POST: Propietario/Edit/:id
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id, Propietario propietario)
         {
             try
@@ -199,8 +201,8 @@ namespace inmobiliaria_mvc.Controllers
                 { "Email", p.Email },
                 {
                     "Acciones", $@"
-                    <a href='/Propietario/Details/{p.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Propietario/Edit/{p.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    {BotonHelper.BotonDetalles("Propietario", p.Id)}
+                    {BotonHelper.BotonEditar("Propietario", p.Id)}
                     {BotonHelper.BotonEliminar("Propietario", p.Id, $"Propietario {p.Nombre} {p.Apellido}")}
                 "
                 }

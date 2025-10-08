@@ -109,6 +109,7 @@ public class InmuebleController : Controller
         }
     }
 
+    [Authorize(Roles = "Administrador")]
 
     public ActionResult Edit(int id)
     {
@@ -126,6 +127,8 @@ public class InmuebleController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
+
     public ActionResult Edit(int id, Inmueble inmueble)
     {
         try
@@ -196,8 +199,8 @@ public class InmuebleController : Controller
             { "Propietario", l.Propietario?.NombreCompleto },
             {
                 "Acciones", $@"
-                <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
-                <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                {BotonHelper.BotonDetalles("Inmueble", l.Id)}
+                {BotonHelper.BotonEditar("Contrato", l.Id)}
                 {BotonHelper.BotonEliminar("Inmueble", l.Id, $"Inmueble {l.Direccion}")}
                 <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
             "

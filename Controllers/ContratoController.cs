@@ -251,6 +251,8 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         //GET: Contrato/Edit
+        [Authorize(Roles = "Administrador")]
+
         public ActionResult Edit(int id)
         {
             try
@@ -277,6 +279,7 @@ namespace inmobiliaria_mvc.Controllers
         //POST: contrato/edit
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id, Contrato contrato)
         {
             try
@@ -460,8 +463,8 @@ namespace inmobiliaria_mvc.Controllers
                 },
                 {
                     "Acciones", $@"
-                    <a href='/Contrato/Renovar/{c.Id}' class='btn btn-success btn-sm'>Renovar</a>
-                    <a href='/Contrato/Edit/{c.Id}' class='btn btn-warning btn-sm'>Editar</a>
+                    {BotonHelper.BotonRenovar("Contrato", c.Id)}
+                    {BotonHelper.BotonEditar("Contrato", c.Id)}
                     {BotonHelper.BotonEliminar(
                         "Contrato",
                         c.Id,
