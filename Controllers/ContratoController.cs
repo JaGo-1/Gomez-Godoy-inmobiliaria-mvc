@@ -111,13 +111,19 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         //GET: Contrato/Create
-        public ActionResult Create()
+        public ActionResult Create(int? inmuebleId)
         {
             try
             {
-                ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion");
+                ViewBag.Inmueble = new SelectList(_repoInmueble.ObtenerTodos(), "Id", "Direccion", inmuebleId);
                 ViewBag.Inquilino = new SelectList(_repoInquilino.ObtenerTodos(), "IdInquilino", "NombreCompleto");
-                return View();
+
+                var contrato = new Contrato();
+                if (inmuebleId.HasValue)
+                {
+                    contrato.IdInmueble = inmuebleId.Value;
+                }
+                return View(contrato);
             }
             catch (Exception ex)
             {
@@ -418,6 +424,17 @@ namespace inmobiliaria_mvc.Controllers
                 multaMeses,
                 multaImporte
             });
+        }
+
+        public JsonResult ObtenerFechasOcupadas(int inmuebleId)
+        {
+            var contratos = _repo.ObtenerFechasDeContratoPorInmueble(inmuebleId);
+            var fechas = contratos.Select(c => new
+            {
+                inicio = c.Fecha_inicio.ToString("yyyy-MM-dd"),
+                fin = c.Fecha_fin.ToString("yyyy-MM-dd")
+            });
+            return Json(fechas);
         }
 
         private TablaViewModel<Contrato> ConstruirTabla(int page, int pageSize, ContratoFiltro filtro)
