@@ -57,7 +57,7 @@
                                         <td>@(contrato.FechaTerminacionAnticipada?.ToShortDateString() ?? "-")</td>
                                         <td>@(contrato.MultaCalculada?.ToString("C") ?? "-")</td>
                                         <td>
-                                            @if (contrato.FechaTerminacionAnticipada == null && contrato.Estado)
+                                            @if (contrato.FechaTerminacionAnticipada == null && contrato.Estado == EstadoContrato.Vigente)
                                             {
                                                 <button type="button"
                                                         class="btn btn-danger btn-sm terminar-contrato"

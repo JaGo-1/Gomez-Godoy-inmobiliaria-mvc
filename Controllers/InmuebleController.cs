@@ -200,7 +200,7 @@ public class InmuebleController : Controller
             {
                 "Acciones", $@"
                 {BotonHelper.BotonDetalles("Inmueble", l.Id)}
-                {BotonHelper.BotonEditar("Contrato", l.Id)}
+                {BotonHelper.BotonEditar("Inmueble", l.Id)}
                 {BotonHelper.BotonEliminar("Inmueble", l.Id, $"Inmueble {l.Direccion}")}
                 <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
             "

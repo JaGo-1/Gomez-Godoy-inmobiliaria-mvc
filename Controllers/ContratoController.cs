@@ -127,6 +127,7 @@ namespace inmobiliaria_mvc.Controllers
                 {
                     contrato.IdInmueble = inmuebleId.Value;
                 }
+
                 return View(contrato);
             }
             catch (Exception ex)
@@ -146,15 +147,6 @@ namespace inmobiliaria_mvc.Controllers
                 if (contrato.Fecha_inicio >= contrato.Fecha_fin)
                 {
                     ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
-                }
-
-                if (contrato.Fecha_inicio <= DateTime.Today && contrato.Fecha_fin >= DateTime.Today)
-                {
-                    contrato.Estado = true;
-                }
-                else
-                {
-                    contrato.Estado = false;
                 }
 
                 if (ModelState.IsValid)
@@ -252,7 +244,6 @@ namespace inmobiliaria_mvc.Controllers
 
         //GET: Contrato/Edit
         [Authorize(Roles = "Administrador")]
-
         public ActionResult Edit(int id)
         {
             try
@@ -457,9 +448,14 @@ namespace inmobiliaria_mvc.Controllers
                 { "Fecha de inicio", c.Fecha_inicio.ToString("dd/MM/yyyy") },
                 { "Fecha de fin", c.Fecha_fin.ToString("dd/MM/yyyy") },
                 {
-                    "Estado", c.Estado
-                        ? "<span class='badge bg-success'>Vigente</span>"
-                        : "<span class='badge bg-danger'>Inactivo</span>"
+                    "Estado", c.EstadoEfectivo switch
+                    {
+                        EstadoContrato.Vigente => "<span class='badge bg-success'>Vigente</span>",
+                        EstadoContrato.Finalizado => "<span class='badge bg-secondary'>Finalizado</span>",
+                        EstadoContrato.Rescindido => "<span class='badge bg-warning text-dark'>Rescindido</span>",
+                        EstadoContrato.Anulado => "<span class='badge bg-danger'>Anulado</span>",
+                        _ => ""
+                    }
                 },
                 {
                     "Acciones", $@"

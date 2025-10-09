@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS Contrato (
     Monto DECIMAL(18,2) NOT NULL,
     Fecha_inicio DATE NOT NULL,
     Fecha_fin DATE NOT NULL,
-    Estado BOOLEAN NOT NULL,
+    estado INTEGER NOT NULL DEFAULT 1,
     Fecha_terminacion_anticipada DATE,
     Multa_calculada DECIMAL(18,2),
     CONSTRAINT fk_contrato_inmueble FOREIGN KEY (IdInmueble)
