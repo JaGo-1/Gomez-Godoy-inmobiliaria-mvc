@@ -5,6 +5,7 @@ using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.Services;
 using inmobiliaria_mvc.ViewModels;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -17,14 +18,16 @@ namespace inmobiliaria_mvc.Controllers
         private readonly IRepositoryContrato _repoContrato;
         private readonly IAuditoriaService _auditoriaService;
         private readonly IConfiguration _config;
+        private readonly IAntiforgery _antiforgery;
 
         public PagoController(IRepositoryPago repo, IRepositoryContrato repoContrato,
-            IAuditoriaService auditoriaService, IConfiguration config)
+            IAuditoriaService auditoriaService, IConfiguration config, IAntiforgery antiforgery)
         {
             _repositorio = repo;
             _repoContrato = repoContrato;
             _auditoriaService = auditoriaService;
             _config = config;
+            _antiforgery = antiforgery;
         }
 
         // public ActionResult Index()
@@ -53,12 +56,18 @@ namespace inmobiliaria_mvc.Controllers
 
         public ActionResult Filtrar(int page = 1, int pageSize = 10)
         {
+            var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+            ViewBag.AntiForgeryToken = tokens.RequestToken;
+
             var tabla = ConstruirTabla(page, pageSize);
             return PartialView("_Tabla", tabla);
         }
 
         public ActionResult Index(int page = 1, int pageSize = 10)
         {
+            var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+            ViewBag.AntiForgeryToken = tokens.RequestToken;
+
             var tabla = ConstruirTabla(page, pageSize);
 
             if (ViewBag.Mensaje == null && TempData.ContainsKey("Mensaje"))
@@ -262,7 +271,8 @@ namespace inmobiliaria_mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Registrar(int contratoId, int numeroPago, int idInquilino, string? detalle = null)
+        public ActionResult Registrar(int contratoId, int numeroPago, int idInquilino, string returnUrl,
+            string? detalle = null)
         {
             var contrato = _repoContrato.ObtenerPorId(contratoId);
             if (contrato == null)
@@ -302,12 +312,22 @@ namespace inmobiliaria_mvc.Controllers
                     : "Pago registrado correctamente. Contrato completado.";
             }
 
-            return RedirectToAction("Details", "Inquilino", new { id = idInquilino });
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
         }
 
         private TablaViewModel<PagoVM> ConstruirTabla(int page, int pageSize)
         {
             var pagos = _repositorio.Paginar(page, pageSize);
+
+            var token = ViewBag.AntiForgeryToken as string;
+            var registrarUrl = Url.Action("Registrar", "Pago");
 
             var tabla = TablaHelper.MapToTablaViewModel(pagos, p => new Dictionary<string, object>
             {
@@ -316,24 +336,33 @@ namespace inmobiliaria_mvc.Controllers
                 { "Inmueble", p.DireccionInmueble ?? "-" },
                 { "Número de pago", p.Pago.NumeroPago },
                 { "Fecha esperada", p.Pago.FechaEsperada.ToString("dd/MM/yyyy") },
-                { "Fecha de pago", p.Pago.FechaPago.HasValue ? p.Pago.FechaPago.Value.ToString("dd/MM/yyyy") : "<span class='badge bg-warning text-dark'>Pendiente</span>" },
+                {
+                    "Fecha de pago",
+                    p.Pago.FechaPago.HasValue
+                        ? p.Pago.FechaPago.Value.ToString("dd/MM/yyyy")
+                        : "<span class='badge bg-warning text-dark'>Pendiente</span>"
+                },
                 { "Importe", p.Pago.Importe.ToString("C") },
                 { "Detalle", p.Pago.Detalle ?? "-" },
-                { "Acciones", $@"
-                    {(p.Pago.Estado && !p.Pago.FechaPago.HasValue ? $@"
-                        <form asp-action='Registrar' method='post' style='display:inline;'>
-                            <input type='hidden' name='contratoId' value='{p.Pago.ContratoId}' />
-                            <input type='hidden' name='numeroPago' value='{p.Pago.NumeroPago}' />
-                            <button type='submit' class='btn btn-primary btn-sm'>Registrar Pago</button>
-                        </form>" : "")}
-                    {BotonHelper.BotonDetalles("Pago", p.Pago.IdPago)}
-                    {BotonHelper.BotonEditar("Pago", p.Pago.IdPago)}
-                    {BotonHelper.BotonEliminar("Pago", p.Pago.IdPago, $"Pago #{p.Pago.NumeroPago} del contrato {p.Pago.ContratoId}")}
-                " }
+                {
+                    "Acciones", $@"
+            {(p.Pago.Estado && !p.Pago.FechaPago.HasValue ? $@"
+                <form method='post' action='{registrarUrl}' style='display:inline;'>
+                    <input type='hidden' name='contratoId' value='{p.Pago.ContratoId}' />
+                    <input type='hidden' name='numeroPago' value='{p.Pago.NumeroPago}' />
+                    <input type='hidden' name='idInquilino' value='{p.IdInquilino}' />
+                    <input type='hidden' name='__RequestVerificationToken' value='{token ?? ""}' />
+                    <input type='hidden' name='returnUrl' value='/Pago' />
+                    <button type='submit' class='btn btn-primary btn-sm'>Registrar Pago</button>
+                </form>" : "")}
+            {BotonHelper.BotonDetalles("Pago", p.Pago.IdPago)}
+            {BotonHelper.BotonEditar("Pago", p.Pago.IdPago)}
+            {BotonHelper.BotonEliminar("Pago", p.Pago.IdPago, $"Pago #{p.Pago.NumeroPago} del contrato {p.Pago.ContratoId}")}
+        "
+                }
             });
 
             return tabla;
         }
-
     }
 }

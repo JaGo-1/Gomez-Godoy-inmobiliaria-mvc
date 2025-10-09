@@ -6,6 +6,7 @@ namespace inmobiliaria_mvc.ViewModels
     {
         public Pago Pago { get; set; }
         public string DireccionInmueble { get; set; }
+        public int IdInquilino { get; set; }
     }
 
 }

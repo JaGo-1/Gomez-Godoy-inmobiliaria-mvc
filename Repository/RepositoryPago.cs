@@ -280,7 +280,8 @@ namespace inmobiliaria_mvc.Repository
                 p.Importe,
                 p.Detalle,
                 p.Estado,
-                i.Direccion
+                i.Direccion,
+                c.IdInquilino
                 FROM Pago p
                 INNER JOIN Contrato c ON p.ContratoId = c.Id
                 INNER JOIN Inmueble i ON c.IdInmueble = i.Id
@@ -312,7 +313,8 @@ namespace inmobiliaria_mvc.Repository
                             res.Add(new PagoVM
                             {
                                 Pago = pago,
-                                DireccionInmueble = reader.GetString(8)
+                                DireccionInmueble = reader.GetString(8),
+                                IdInquilino = reader.GetInt32(9)
                             });
                         }
                     }
