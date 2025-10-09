@@ -3,11 +3,14 @@
 -- ======================================
 
 -- Vaciar tablas y reiniciar IDs
+TRUNCATE TABLE auditoria RESTART IDENTITY CASCADE;
 TRUNCATE TABLE pago RESTART IDENTITY CASCADE;
 TRUNCATE TABLE contrato RESTART IDENTITY CASCADE;
+TRUNCATE TABLE imagen RESTART IDENTITY CASCADE;
 TRUNCATE TABLE inmueble RESTART IDENTITY CASCADE;
 TRUNCATE TABLE inquilino RESTART IDENTITY CASCADE;
 TRUNCATE TABLE propietario RESTART IDENTITY CASCADE;
+TRUNCATE TABLE usuario RESTART IDENTITY CASCADE;
 
 -- Insertar datos en Propietario
 INSERT INTO propietario (dni, nombre, apellido, telefono, email, clave, estado)
@@ -182,3 +185,10 @@ VALUES (1, 1, '2025-02-01', '2025-02-03', 45000.00, 'Mes 1 - Pagado (2025-02-03)
        (20, 2, '2025-03-03', '2025-03-03', 37000.00, 'Mes 2 - Pagado (2025-03-03)', TRUE, FALSE),
        (20, 3, '2025-04-02', '2025-10-09', 3047.03, 'Multa por terminación anticipada - Pagada (09/10/2025)', TRUE,
         TRUE);
+
+-- Usuarios
+INSERT INTO Usuario (nombre, apellido, email, password, avatar, rol)
+VALUES 
+('Admin', 'General', 'admin@sistema.com', '8nb9iB2gjvPe0ZYbQX9lxC2dgfdcDhch8qgk7kIfBHU=', '', 1),
+('Empleado', 'Pérez', 'empleado@sistema.com', 'gGsBptX3CJddbLrI/cVWRKu1KUiTtkzhDyWR0UEW7Bc=', '', 2);
+
