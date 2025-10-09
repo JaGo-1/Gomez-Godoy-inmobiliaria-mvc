@@ -31,7 +31,7 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_inicio", p.Fecha_inicio);
                     cmd.Parameters.AddWithValue("@fecha_fin", p.Fecha_fin);
                     cmd.Parameters.AddWithValue("@monto", p.Monto);
-                    cmd.Parameters.AddWithValue("@estado", p.Estado);
+                    cmd.Parameters.AddWithValue("@estado", (int)p.Estado);
 
                     conn.Open();
                     var id = cmd.ExecuteScalar();
@@ -44,7 +44,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
 
-                if (contratoId > 0 && p.Estado == true)
+                if (contratoId > 0 && p.Estado == EstadoContrato.Vigente)
                 {
                     _repoPago.GenerarPrimerPagoParaContrato(contratoId, p.Monto, p.Fecha_inicio);
                 }
@@ -58,10 +58,11 @@ namespace inmobiliaria_mvc.Repository
             int res = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "UPDATE contrato SET estado = false WHERE id = @id";
+                string sql = "UPDATE contrato SET estado = @estado WHERE id = @id";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", id);
+                    cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Anulado);
                     conn.Open();
                     res = cmd.ExecuteNonQuery();
                     conn.Close();
@@ -79,7 +80,7 @@ namespace inmobiliaria_mvc.Repository
                 var sql = @"UPDATE contrato SET idinmueble = @id_inmueble, idinquilino = @id_inquilino, 
                             fecha_inicio = @fecha_inicio, fecha_fin = @fecha_fin, monto = @monto,
                             fecha_terminacion_anticipada = @fecha_terminacion_anticipada, 
-                            multa_calculada = @multa_calculada
+                            multa_calculada = @multa_calculada, estado = @estado
                             WHERE id = @id";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
@@ -93,7 +94,7 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_terminacion_anticipada",
                         (object)p.FechaTerminacionAnticipada ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@multa_calculada", (object)p.MultaCalculada ?? DBNull.Value);
-
+                    cmd.Parameters.AddWithValue("@estado", (int)p.Estado);
                     conn.Open();
                     res = cmd.ExecuteNonQuery();
                     conn.Close();
@@ -109,7 +110,7 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, 
-                               fecha_terminacion_anticipada, multa_calculada 
+                               fecha_terminacion_anticipada, multa_calculada, estado
                                FROM contrato WHERE id = @id";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
@@ -134,7 +135,8 @@ namespace inmobiliaria_mvc.Repository
                                     : reader.GetDateTime("fecha_terminacion_anticipada"),
                                 MultaCalculada = reader.IsDBNull("multa_calculada")
                                     ? null
-                                    : reader.GetDecimal("multa_calculada")
+                                    : reader.GetDecimal("multa_calculada"),
+                                Estado = (EstadoContrato)reader.GetInt32("estado")
                             };
                         }
                     }
@@ -159,10 +161,12 @@ namespace inmobiliaria_mvc.Repository
             var res = new List<Contrato>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto
-                               FROM contrato WHERE estado = true;";
+                string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, estado
+                               FROM contrato WHERE estado = @estado;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
+                    cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
+
                     conn.Open();
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -181,6 +185,7 @@ namespace inmobiliaria_mvc.Repository
                                 Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                 Fecha_fin = reader.GetDateTime("fecha_fin"),
                                 Monto = reader.GetDecimal("monto"),
+                                Estado = (EstadoContrato)reader.GetInt32("estado")
                             });
                         }
                     }
@@ -196,7 +201,7 @@ namespace inmobiliaria_mvc.Repository
         {
             using var conn = new NpgsqlConnection(connectionString);
 
-            string sql = @"SELECT COUNT(*) FROM contrato WHERE idinmueble = @id_inmueble AND estado = true 
+            string sql = @"SELECT COUNT(*) FROM contrato WHERE idinmueble = @id_inmueble AND estado = @estado 
                            AND (fecha_inicio, fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin)";
 
             if (contratoId.HasValue)
@@ -208,6 +213,7 @@ namespace inmobiliaria_mvc.Repository
             cmd.Parameters.AddWithValue("@id_inmueble", inmuebleId);
             cmd.Parameters.AddWithValue("@fecha_inicio", fechaInicio);
             cmd.Parameters.AddWithValue("@fecha_fin", fechaFin);
+            cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
 
             if (contratoId.HasValue)
             {
@@ -228,11 +234,12 @@ namespace inmobiliaria_mvc.Repository
                 {
                     string sql =
                         @"SELECT id, idinquilino, fecha_inicio, fecha_fin, monto, estado, fecha_terminacion_anticipada, multa_calculada 
-                        FROM contrato WHERE idinmueble = @idInmueble AND estado = TRUE;";
+                        FROM contrato WHERE idinmueble = @idInmueble AND estado = @estado";
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@idInmueble", idInmueble);
+                        cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
                         conn.Open();
                         using (var reader = cmd.ExecuteReader())
                         {
@@ -247,7 +254,7 @@ namespace inmobiliaria_mvc.Repository
                                     Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                     Fecha_fin = reader.GetDateTime("fecha_fin"),
                                     Monto = reader.GetDecimal("monto"),
-                                    Estado = reader.GetBoolean("estado"),
+                                    Estado = (EstadoContrato)reader.GetInt32("estado"),
                                     FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
                                         ? null
                                         : reader.GetDateTime("fecha_terminacion_anticipada"),
@@ -374,7 +381,7 @@ namespace inmobiliaria_mvc.Repository
                         Fecha_inicio = reader.GetDateTime(4),
                         Fecha_fin = reader.GetDateTime(5),
                         Monto = reader.GetDecimal(6),
-                        Estado = reader.GetBoolean(7)
+                        Estado = (EstadoContrato)reader.GetInt32(7)
                     });
                 }
             }
@@ -397,7 +404,7 @@ namespace inmobiliaria_mvc.Repository
 
             contrato.MultaCalculada = CalcularMultaImporte(contrato, fechaTerminacion);
             contrato.FechaTerminacionAnticipada = fechaTerminacion;
-            contrato.Fecha_fin = fechaTerminacion;
+            contrato.Estado = EstadoContrato.Rescindido;
             Modificacion(contrato);
 
             var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true).ToList();
@@ -471,8 +478,16 @@ namespace inmobiliaria_mvc.Repository
 
             if (filtro.Disponible.HasValue)
             {
-                whereConditions.Add("c.estado = @disponible");
-                parameters.Add(new NpgsqlParameter("disponible", filtro.Disponible.Value));
+                if (filtro.Disponible.Value)
+                {
+                    whereConditions.Add("c.estado = @estado_vigente");
+                    parameters.Add(new NpgsqlParameter("estado_vigente", (int)EstadoContrato.Vigente));
+                }
+                else
+                {
+                    whereConditions.Add("c.estado != @estado_vigente");
+                    parameters.Add(new NpgsqlParameter("estado_vigente", (int)EstadoContrato.Vigente));
+                }
             }
 
             if (filtro.Plazo.HasValue)
@@ -561,7 +576,7 @@ namespace inmobiliaria_mvc.Repository
                                     Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                     Fecha_fin = reader.GetDateTime("fecha_fin"),
                                     Monto = reader.GetDecimal("monto"),
-                                    Estado = reader.GetBoolean("estado"),
+                                    Estado = (EstadoContrato)reader.GetInt32("estado"),
                                     FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
                                         ? null
                                         : reader.GetDateTime("fecha_terminacion_anticipada"),

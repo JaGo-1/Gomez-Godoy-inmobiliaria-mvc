@@ -215,7 +215,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 string sql =
-                    @"SELECT direccion, tipo, uso, ambientes, precio FROM inmueble WHERE propietarioid = @propietarioId AND estado = true;";
+                    @"SELECT Id, direccion, tipo, uso, ambientes, precio FROM inmueble WHERE propietarioid = @propietarioId;";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -228,11 +228,12 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                         {
                             res.Add(new Inmueble
                             {
-                                Direccion = reader.GetString(0),
-                                Tipo = Enum.Parse<TipoInmueble>(reader.GetString(1)),
-                                Uso = Enum.Parse<UsoInmueble>(reader.GetString(2)),
-                                Ambientes = reader.GetInt32(3),
-                                Precio = reader.GetDecimal(4)
+                                Id = reader.GetInt32(0),
+                                Direccion = reader.GetString(1),
+                                Tipo = Enum.Parse<TipoInmueble>(reader.GetString(2)),
+                                Uso = Enum.Parse<UsoInmueble>(reader.GetString(3)),
+                                Ambientes = reader.GetInt32(4),
+                                Precio = reader.GetDecimal(5)
                             });
                         }
                     }
@@ -285,7 +286,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             {
                 var existsClause = soloDisponibles.Value ? "NOT EXISTS" : "EXISTS";
                 whereConditions.Add(
-                    $"{existsClause} (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = true AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))");
+                    $"{existsClause} (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = @estado_vigente AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))");
             }
 
             string whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
@@ -308,6 +309,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 {
                     countCmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
                     countCmd.Parameters.AddWithValue("@fecha_fin", effectiveEnd);
+                    countCmd.Parameters.AddWithValue("@estado_vigente", (int)Models.EstadoContrato.Vigente);
                 }
 
                 totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
@@ -316,7 +318,7 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
             string selectJoin = "INNER JOIN Propietario p ON i.PropietarioId = p.Id";
             string sql = $@"
         SELECT i.Id, i.Direccion, i.Precio, i.Ambientes, i.Estado, i.Latitud, i.Longitud, i.Uso, i.Tipo, i.PropietarioId, i.Portada, p.Nombre, p.Apellido,
-               CASE WHEN EXISTS (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = true AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))
+               CASE WHEN EXISTS (SELECT 1 FROM contrato c WHERE c.idinmueble = i.id AND c.estado = @estado_vigente AND (c.fecha_inicio, c.fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin))
                     THEN 'Ocupado' ELSE 'Disponible' END as Disponibilidad
         FROM Inmueble i
         {selectJoin}
@@ -330,6 +332,8 @@ public class RepositoryInmueble : RepositorioBase, IRepositoryInmueble
                 cmd.Parameters.AddWithValue("tamPagina", tamPagina);
                 cmd.Parameters.AddWithValue("@fecha_inicio", effectiveStart);
                 cmd.Parameters.AddWithValue("@fecha_fin", effectiveEnd);
+                cmd.Parameters.AddWithValue("@estado_vigente", (int)Models.EstadoContrato.Vigente);
+
 
                 if (!string.IsNullOrEmpty(termino))
                 {
