@@ -2,10 +2,9 @@
 @model TablaViewModel<Inquilino>
 
 @{
-    ViewData["Title"] = "Lista de Inquilinos";
+    ViewData["Title"] = "Inquilinos";
 }
 
-<h1>@ViewData["Title"]</h1>
 
 @if (ViewBag.Mensaje != null)
 {
@@ -16,17 +15,30 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="termino" class="form-control" placeholder="Buscar por DNI, nombre o email"
-            value="@ViewData["Termino"]" />
-        <button type="submit" class="btn btn-primary">Buscar</button>
-    </div>
-</form>
+@{
+    var termino = ViewData["Termino"] as string;
+}
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Inquilino</a>
-</p>
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+
+    <div class="d-flex align-items-end gap-5 justify-content-between flex-wrap">
+
+        <div style="width: 300px;">
+            <input type="text" id="filtro-termino" class="form-control bg-transparent small-placeholder small-font"
+                placeholder="Buscar por DNI, nombre o email" value="@termino" />
+        </div>
+
+        <a asp-action="Create"
+            class="btn border border-success text-success rounded bg-transparent d-flex align-items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            Nuevo Inquilino
+        </a>
+    </div>
+</div>
+
+
+
 
 <div id="tabla-inquilino">
     <partial name="_Tabla" model="Model" />
@@ -38,8 +50,14 @@
         document.addEventListener("DOMContentLoaded", () => {
             const tablaInquilino = initTabla({
                 endpoint: "/Inquilino/Filtrar",
-                containerId: "tabla-inquilino"
+                containerId: "tabla-inquilino",
+                extraParamsFn: () => {
+                    const term = document.getElementById("filtro-termino")?.value || "";
+                    return { termino: term };
+                }
             });
+
+            document.getElementById("filtro-termino")?.addEventListener("input", () => tablaInquilino.init(1));
 
             tablaInquilino.init(1);
         });

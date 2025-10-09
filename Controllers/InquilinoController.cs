@@ -2,6 +2,7 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace inmobiliaria_mvc.Controllers
@@ -22,19 +23,21 @@ namespace inmobiliaria_mvc.Controllers
             _config = config;
         }
 
-        public ActionResult Filtrar(int page = 1, int pageSize = 10)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
             return PartialView("_Tabla", tabla);
         }
 
-        public ActionResult Index(int page = 1, int pageSize = 10)
+        public ActionResult Index(int page = 1, int pageSize = 10, string? termino = null)
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, termino);
             if (TempData.ContainsKey("Id"))
                 ViewBag.Id = TempData["Id"];
             if (TempData.ContainsKey("Mensaje"))
                 ViewBag.Mensaje = TempData["Mensaje"];
+
+            ViewData["Termino"] = termino;
 
             return View(tabla);
         }
@@ -121,6 +124,7 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id)
         {
             try
@@ -142,6 +146,7 @@ namespace inmobiliaria_mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Edit(int id, Inquilino entidad)
         {
             try
@@ -165,25 +170,9 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-        public ActionResult Delete1(int id)
-        {
-            try
-            {
-                var entidad = repositorio.ObtenerPorId(id);
-                if (entidad == null)
-                {
-                    TempData["Error"] = "Inquilino no encontrado para eliminación.";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                return View(entidad);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public ActionResult Delete(int id)
         {
             try
@@ -199,27 +188,9 @@ namespace inmobiliaria_mvc.Controllers
             }
         }
 
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize, string? termino)
         {
-            try
-            {
-                repositorio.Baja(id);
-                TempData["Mensaje"] = "Eliminación realizada correctamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Hubo un error al eliminar el inquilino.";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        private TablaViewModel<Inquilino> ConstruirTabla(int page, int pageSize)
-        {
-            var lista = repositorio.Paginar(page, pageSize);
+            var lista = repositorio.Paginar(page, pageSize, termino);
             var tabla = TablaHelper.MapToTablaViewModel(lista, l => new Dictionary<string, object>
             {
                 { "Código", l.IdInquilino },
@@ -229,9 +200,9 @@ namespace inmobiliaria_mvc.Controllers
                 { "Email", l.Email },
                 {
                     "Acciones", $@"
-                    <a href='/Inquilino/Details/{l.IdInquilino}' class='btn btn-info btn-sm'>Detalles</a>
-                    <a href='/Inquilino/Edit/{l.IdInquilino}' class='btn btn-warning btn-sm'>Editar</a>
-                    <a href='/Inquilino/Delete/{l.IdInquilino}' class='btn btn-danger btn-sm'>Eliminar</a>
+                    {BotonHelper.BotonDetalles("Inquilino", l.IdInquilino)}
+                    {BotonHelper.BotonEditar("Inquilino", l.IdInquilino)}
+                    {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}
                 "
                 }
             });

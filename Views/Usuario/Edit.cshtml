@@ -4,14 +4,18 @@
     ViewData["Title"] = "Editar Usuario";
 }
 
-<h1>@ViewData["Title"]</h1>
-<hr />
 
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Edit" enctype="multipart/form-data">
-            <partial name="_FormUsuario" model="Model" />
+<div class="mb-5">
+    <a asp-action="Index" class="btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver</a>
+</div>
 
+<h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+
+<div>
+    <form asp-action="Edit" enctype="multipart/form-data">
+        <div class="row g-3">
             <div class="form-group mt-3">
                 @if (!string.IsNullOrEmpty(Model.Avatar))
                 {
@@ -23,13 +27,11 @@
                     <p><em>Sin avatar</em></p>
                 }
             </div>
-        </form>
-    </div>
+            <partial name="_FormUsuario" model="Model" />
+        </div>
+    </form>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-secondary mt-3">Volver a Lista</a>
-</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

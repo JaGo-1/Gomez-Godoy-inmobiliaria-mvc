@@ -8,6 +8,6 @@ namespace inmobiliaria_mvc.Repository
         //IList<Propietario> BuscarPorNombre(string nombre);
         // Propietario BuscarPorEmail(string email);
         // IList<Propietario> ObtenerPorPagina(int pagina, int cantidad);
-        PagedResult<Propietario> Paginar(int page, int pageSize);
+        PagedResult<Propietario> Paginar(int page, int pageSize, string? termino = null);
     }
 }

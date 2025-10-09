@@ -1,11 +1,11 @@
 @using inmobiliaria_mvc.ViewModels
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
 @model TablaViewModel<Contrato>
 
 @{
     ViewData["Title"] = "Contratos";
 }
-
-<h1>@ViewData["Title"]</h1>
 
 @if (ViewBag.Mensaje != null)
 {
@@ -16,53 +16,73 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="termino" class="form-control" placeholder="Buscar por dirección, precio o propietario"
-            value="@ViewData["Termino"]" />
-        <button type="submit" class="btn btn-primary">Buscar</button>
-    </div>
-</form>
-
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
-</p>
-
 @{
+    var admin = (await AuthorizationService.AuthorizeAsync(User, "Administrador")).Succeeded;
+    var termino = ViewData["Termino"] as string;
     var disponible = ViewData["Disponible"] as bool?;
-    var opciones = new List<SelectListItem>
-{
-new SelectListItem { Text = "Todos", Value = "", Selected = disponible == null },
-new SelectListItem { Text = "Contratos vigentes", Value = "true", Selected = disponible == true },
-new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = disponible == false }
-};
 }
+
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+
+    <div class="d-flex align-items-center gap-3">
+        <a asp-action="Create"
+            class="btn border border-success text-success rounded bg-transparent d-flex align-items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            Nuevo Contrato
+        </a>
+
+        @if (admin)
+        {
+            <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="contrato"
+                class="btn btn-dark d-flex align-items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Historial
+                de
+                cambios</a>
+        }
+    </div>
+</div>
+
 
 <!-- Filtros -->
 <div class="row mb-3">
-    <div class="col-md-4">
-        <label>Disponibilidad</label>
-        <select id="filtro-disponible" class="form-select">
+    <div class="col-md-3">
+        <label class="small-font">Búsqueda</label>
+        <input type="text" id="filtro-termino" class="form-control bg-transparent"
+            placeholder="Dirección, precio o propietario" value="@termino" />
+    </div>
+    <div class="col-md-3">
+        <label class="small-font">Disponibilidad</label>
+        <select id="filtro-disponible" class="form-select bg-transparent">
             <option value="true" selected="@(disponible == true)">Vigentes</option>
             <option value="false" selected="@(disponible == false)">Inactivos</option>
             <option value="" selected="@(disponible == null)">-- Todos --</option>
-
         </select>
     </div>
-
-    <div class="col-md-4">
-        <label>Plazo (días)</label>
-        <select id="filtro-plazo" class="form-select">
+    <div class="col-md-3">
+        <label class="small-font">Plazo (días)</label>
+        <select id="filtro-plazo" class="form-select bg-transparent">
             <option value="">-- Todos --</option>
             <option value="30">30 días</option>
             <option value="60">60 días</option>
             <option value="90">90 días</option>
         </select>
     </div>
+    <div class="col-md-3">
+        <label class="small-font">Plazo personalizado</label>
+        <input type="number" id="filtro-plazo-custom" class="form-control bg-transparent" placeholder="Ej: 45">
+    </div>
+</div>
 
-    <div class="col-md-4">
-        <label>Plazo personalizado</label>
-        <input type="number" id="filtro-plazo-custom" class="form-control" placeholder="Ej: 45">
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="filtro-desde" class="small-font">Desde</label>
+        <input type="date" id="filtro-desde" class="form-control flatpick bg-transparent">
+    </div>
+    <div class="col-md-6">
+        <label for="filtro-hasta" class="small-font">Hasta</label>
+        <input type="date" id="filtro-hasta" class="form-control flatpick bg-transparent">
     </div>
 </div>
 
@@ -79,17 +99,29 @@ new SelectListItem { Text = "Contratos inactivos", Value = "false", Selected = d
                 endpoint: "/Contrato/Filtrar",
                 containerId: "tabla-contratos",
                 extraParamsFn: () => {
+                    const term = document.getElementById("filtro-termino")?.value || "";
                     const disponible = document.getElementById("filtro-disponible")?.value || "";
                     const plazoSelect = document.getElementById("filtro-plazo")?.value || "";
                     const plazoCustom = document.getElementById("filtro-plazo-custom")?.value || "";
-                    return { disponible, plazo: plazoCustom || plazoSelect };
+                    const desde = document.getElementById("filtro-desde")?.value || "";
+                    const hasta = document.getElementById("filtro-hasta")?.value || "";
+                    return {
+                        termino: term,
+                        disponible,
+                        plazo: plazoCustom || plazoSelect,
+                        desde,
+                        hasta
+                    };
                 }
             });
 
-            // Filtros
+            // Filtros dinámicos
+            document.getElementById("filtro-termino")?.addEventListener("input", () => tablaContratos.init(1));
             document.getElementById("filtro-disponible")?.addEventListener("change", () => tablaContratos.init(1));
             document.getElementById("filtro-plazo")?.addEventListener("change", () => tablaContratos.init(1));
             document.getElementById("filtro-plazo-custom")?.addEventListener("input", () => tablaContratos.init(1));
+            document.getElementById("filtro-desde")?.addEventListener("change", () => tablaContratos.init(1));
+            document.getElementById("filtro-hasta")?.addEventListener("change", () => tablaContratos.init(1));
 
             tablaContratos.init(1);
         });

@@ -5,7 +5,7 @@
     ViewData["Title"] = "Lista de Inmuebles";
 }
 
-<h1>@ViewData["Title"]</h1>
+
 
 @if (ViewBag.Mensaje != null)
 {
@@ -23,24 +23,34 @@
     var soloDisponibles = ViewData["SoloDisponibles"] as bool?;
 }
 
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+    <a asp-action="Create"
+        class="btn border border-success text-success rounded bg-transparent d-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i>
+        Nuevo Inmueble
+    </a>
+</div>
+
 <div class="row mb-3">
     <div class="col-md-3">
-        <label>Búsqueda</label>
-        <input type="text" id="filtro-termino" class="form-control" placeholder="Dirección, precio o propietario"
-               value="@termino"/>
+        <label class="small-font text-secondary">Búsqueda</label>
+        <input type="text" id="filtro-termino" class="form-control bg-transparent"
+            placeholder="Dirección, precio o propietario" value="@termino" />
     </div>
     <div class="col-md-3">
-        <label>Fecha Inicio</label>
-        <input type="date" id="filtro-fecha-inicio" class="form-control"
-               value="@(fechaInicio?.ToString("yyyy-MM-dd"))"/>
+        <label class="small-font text-secondary">Fecha Inicio</label>
+        <input type="date" id="filtro-fecha-inicio" class="form-control bg-transparent flatpick"
+            value="@(fechaInicio?.ToString("yyyy-MM-dd"))" />
     </div>
     <div class="col-md-3">
-        <label>Fecha Fin</label>
-        <input type="date" id="filtro-fecha-fin" class="form-control" value="@(fechaFin?.ToString("yyyy-MM-dd"))"/>
+        <label class="small-font text-secondary">Fecha Fin</label>
+        <input type="date" id="filtro-fecha-fin" class="form-control bg-transparent flatpick"
+            value="@(fechaFin?.ToString("yyyy-MM-dd"))" />
     </div>
     <div class="col-md-3">
-        <label>Disponibilidad</label>
-        <select id="filtro-disponibilidad" class="form-select">
+        <label class="small-font text-secondary">Disponibilidad</label>
+        <select id="filtro-disponibilidad" class="form-select bg-transparent">
             <option value="" selected="@(soloDisponibles == null)">-- Todos --</option>
             <option value="true" selected="@(soloDisponibles == true)">Disponibles</option>
             <option value="false" selected="@(soloDisponibles == false)">Ocupados</option>
@@ -48,15 +58,12 @@
     </div>
 </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Inmueble</a>
-</p>
-
 <div id="tabla-inmueble">
-    <partial name="_Tabla" model="Model"/>
+    <partial name="_Tabla" model="Model" />
 </div>
 
 @section Scripts {
+
     <script src="~/js/tabla.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -68,7 +75,7 @@
                     const fi = document.getElementById("filtro-fecha-inicio")?.value || "";
                     const ff = document.getElementById("filtro-fecha-fin")?.value || "";
                     const disp = document.getElementById("filtro-disponibilidad")?.value || "";
-                    return {termino: term, fechaInicio: fi, fechaFin: ff, soloDisponibles: disp};
+                    return { termino: term, fechaInicio: fi, fechaFin: ff, soloDisponibles: disp };
                 }
             });
 

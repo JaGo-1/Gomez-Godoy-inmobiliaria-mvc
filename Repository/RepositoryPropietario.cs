@@ -8,7 +8,6 @@ namespace inmobiliaria_mvc.Repository
     {
         public RepositoryPropietario(IConfiguration configuration) : base(configuration)
         {
-
         }
 
         public int Alta(Propietario propietario)
@@ -16,7 +15,8 @@ namespace inmobiliaria_mvc.Repository
             int res = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                var sql = @"INSERT INTO Propietario (dni, nombre, apellido, telefono, email, clave, estado) VALUES (@dni, @nombre, @apellido, @telefono, @email, @clave, @estado)";
+                var sql =
+                    @"INSERT INTO Propietario (dni, nombre, apellido, telefono, email, clave, estado) VALUES (@dni, @nombre, @apellido, @telefono, @email, @clave, @estado)";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("dni", propietario.Dni);
@@ -34,6 +34,7 @@ namespace inmobiliaria_mvc.Repository
                         res = Convert.ToInt32(id);
                         propietario.Id = res;
                     }
+
                     conn.Close();
                 }
             }
@@ -56,6 +57,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -64,7 +66,8 @@ namespace inmobiliaria_mvc.Repository
             int res = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "UPDATE propietario SET dni = @dni, nombre = @nombre, apellido = @apellido, telefono = @telefono, email = @email, clave = @clave WHERE id = @id";
+                string sql =
+                    "UPDATE propietario SET dni = @dni, nombre = @nombre, apellido = @apellido, telefono = @telefono, email = @email, clave = @clave WHERE id = @id";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("id", p.Id);
@@ -79,6 +82,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
             }
+
             return res;
         }
 
@@ -108,9 +112,11 @@ namespace inmobiliaria_mvc.Repository
                             };
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return propietario;
         }
 
@@ -119,7 +125,8 @@ namespace inmobiliaria_mvc.Repository
             var res = new List<Propietario>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "SELECT id, dni, nombre, apellido, telefono, email, clave FROM propietario WHERE estado = true";
+                string sql =
+                    "SELECT id, dni, nombre, apellido, telefono, email, clave FROM propietario WHERE estado = true";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     conn.Open();
@@ -139,13 +146,15 @@ namespace inmobiliaria_mvc.Repository
                             });
                         }
                     }
+
                     conn.Close();
                 }
             }
+
             return res;
         }
 
-        public PagedResult<Propietario> Paginar(int pagina = 1, int tamPagina = 10)
+        public PagedResult<Propietario> Paginar(int pagina = 1, int tamPagina = 10, string? termino = null)
         {
             var res = new List<Propietario>();
             int totalItems = 0;
@@ -153,22 +162,45 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 conn.Open();
-                string countSql = "SELECT COUNT(*) FROM propietario WHERE estado = true";
+
+                var whereConditions = new List<string> { "estado = true" };
+
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    whereConditions.Add($@"(LOWER(CAST(dni AS TEXT)) LIKE LOWER(@termino) 
+                                           OR LOWER(nombre) LIKE LOWER(@termino)
+                                           OR LOWER(apellido) LIKE LOWER(@termino)
+                                           OR LOWER(email) LIKE LOWER(@termino))");
+                }
+
+                string whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+
+                string countSql = $"SELECT COUNT(*) FROM propietario {whereClause}";
                 using (var countCmd = new NpgsqlCommand(countSql, conn))
                 {
+                    if (!string.IsNullOrEmpty(termino))
+                    {
+                        countCmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    }
+
                     totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
                 }
 
-                string sql = @"SELECT id, dni, nombre, apellido, telefono, email
-                       FROM propietario 
-                       WHERE estado = true 
-                       ORDER BY id 
-                       LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+                string sql = $@"SELECT id, dni, nombre, apellido, telefono, email
+                                FROM propietario 
+                                {whereClause}
+                                ORDER BY id 
+                                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("pagina", pagina);
                     cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                    if (!string.IsNullOrEmpty(termino))
+                    {
+                        cmd.Parameters.AddWithValue("@termino", $"%{termino}%");
+                    }
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -198,6 +230,5 @@ namespace inmobiliaria_mvc.Repository
                 PageSize = tamPagina
             };
         }
-
     }
 }

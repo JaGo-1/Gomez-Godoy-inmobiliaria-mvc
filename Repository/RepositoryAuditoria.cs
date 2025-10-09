@@ -66,8 +66,7 @@ public class RepositoryAuditoria : RepositorioBase, IRepositoryAuditoria
     {
         throw new NotImplementedException();
     }
-
-    public PagedResult<Auditoria> Paginar(int pagina, int tamPagina)
+    public PagedResult<Auditoria> Paginar(int pagina, int tamPagina, string tipo)
     {
         var res = new List<Auditoria>();
         int totalItems = 0;
@@ -75,18 +74,35 @@ public class RepositoryAuditoria : RepositorioBase, IRepositoryAuditoria
         using (var conn = new NpgsqlConnection(connectionString))
         {
             conn.Open();
-            string countSql = "SELECT COUNT (*) FROM auditoria WHERE estado = true";
+
+            bool filtrar = tipo.Equals("Contrato", StringComparison.OrdinalIgnoreCase) ||
+                           tipo.Equals("Pago", StringComparison.OrdinalIgnoreCase);
+
+            string filtroSql = filtrar ? " AND LOWER(entidad) = LOWER(@tipo)" : "";
+
+            string countSql = $"SELECT COUNT(*) FROM auditoria WHERE estado = true {filtroSql}";
             using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
+                if (filtrar)
+                    countCmd.Parameters.AddWithValue("tipo", tipo);
+
                 totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
             }
 
-            string sql = "SELECT id, entidad, entidad_id, accion, usuario_id, fecha FROM auditoria WHERE Estado = true ORDER BY id LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
+            string sql = $@"
+            SELECT id, entidad, entidad_id, accion, usuario_id, fecha
+            FROM auditoria
+            WHERE estado = true {filtroSql}
+            ORDER BY id
+            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("pagina", pagina);
                 cmd.Parameters.AddWithValue("tamPagina", tamPagina);
+
+                if (filtrar)
+                    cmd.Parameters.AddWithValue("tipo", tipo);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -104,7 +120,6 @@ public class RepositoryAuditoria : RepositorioBase, IRepositoryAuditoria
                     }
                 }
             }
-            conn.Close();
         }
 
         return new PagedResult<Auditoria>
@@ -115,4 +130,5 @@ public class RepositoryAuditoria : RepositorioBase, IRepositoryAuditoria
             PageSize = tamPagina
         };
     }
+
 }

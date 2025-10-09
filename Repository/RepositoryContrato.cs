@@ -3,6 +3,7 @@ using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.ViewModels;
 using Npgsql;
 using inmobiliaria_mvc.Repository;
+using inmobiliaria_mvc.Models.Filtros;
 
 namespace inmobiliaria_mvc.Repository
 {
@@ -30,7 +31,7 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_inicio", p.Fecha_inicio);
                     cmd.Parameters.AddWithValue("@fecha_fin", p.Fecha_fin);
                     cmd.Parameters.AddWithValue("@monto", p.Monto);
-                    cmd.Parameters.AddWithValue("@estado", p.Estado);
+                    cmd.Parameters.AddWithValue("@estado", (int)p.Estado);
 
                     conn.Open();
                     var id = cmd.ExecuteScalar();
@@ -43,7 +44,7 @@ namespace inmobiliaria_mvc.Repository
                     conn.Close();
                 }
 
-                if (contratoId > 0 && p.Estado == true)
+                if (contratoId > 0 && p.Estado == EstadoContrato.Vigente)
                 {
                     _repoPago.GenerarPrimerPagoParaContrato(contratoId, p.Monto, p.Fecha_inicio);
                 }
@@ -57,10 +58,11 @@ namespace inmobiliaria_mvc.Repository
             int res = -1;
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = "UPDATE contrato SET estado = false WHERE id = @id";
+                string sql = "UPDATE contrato SET estado = @estado WHERE id = @id";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", id);
+                    cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Anulado);
                     conn.Open();
                     res = cmd.ExecuteNonQuery();
                     conn.Close();
@@ -78,7 +80,7 @@ namespace inmobiliaria_mvc.Repository
                 var sql = @"UPDATE contrato SET idinmueble = @id_inmueble, idinquilino = @id_inquilino, 
                             fecha_inicio = @fecha_inicio, fecha_fin = @fecha_fin, monto = @monto,
                             fecha_terminacion_anticipada = @fecha_terminacion_anticipada, 
-                            multa_calculada = @multa_calculada
+                            multa_calculada = @multa_calculada, estado = @estado
                             WHERE id = @id";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
@@ -92,7 +94,7 @@ namespace inmobiliaria_mvc.Repository
                     cmd.Parameters.AddWithValue("@fecha_terminacion_anticipada",
                         (object)p.FechaTerminacionAnticipada ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@multa_calculada", (object)p.MultaCalculada ?? DBNull.Value);
-
+                    cmd.Parameters.AddWithValue("@estado", (int)p.Estado);
                     conn.Open();
                     res = cmd.ExecuteNonQuery();
                     conn.Close();
@@ -108,8 +110,8 @@ namespace inmobiliaria_mvc.Repository
             using (var conn = new NpgsqlConnection(connectionString))
             {
                 string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, 
-                               fecha_terminacion_anticipada, multa_calculada 
-                               FROM contrato WHERE id = @id AND estado = true";
+                               fecha_terminacion_anticipada, multa_calculada, estado
+                               FROM contrato WHERE id = @id";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -133,7 +135,8 @@ namespace inmobiliaria_mvc.Repository
                                     : reader.GetDateTime("fecha_terminacion_anticipada"),
                                 MultaCalculada = reader.IsDBNull("multa_calculada")
                                     ? null
-                                    : reader.GetDecimal("multa_calculada")
+                                    : reader.GetDecimal("multa_calculada"),
+                                Estado = (EstadoContrato)reader.GetInt32("estado")
                             };
                         }
                     }
@@ -158,10 +161,12 @@ namespace inmobiliaria_mvc.Repository
             var res = new List<Contrato>();
             using (var conn = new NpgsqlConnection(connectionString))
             {
-                string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto
-                               FROM contrato WHERE estado = true;";
+                string sql = @"SELECT id, idinmueble, idinquilino, fecha_inicio, fecha_fin, monto, estado
+                               FROM contrato WHERE estado = @estado;";
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
+                    cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
+
                     conn.Open();
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -180,6 +185,7 @@ namespace inmobiliaria_mvc.Repository
                                 Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                 Fecha_fin = reader.GetDateTime("fecha_fin"),
                                 Monto = reader.GetDecimal("monto"),
+                                Estado = (EstadoContrato)reader.GetInt32("estado")
                             });
                         }
                     }
@@ -195,7 +201,7 @@ namespace inmobiliaria_mvc.Repository
         {
             using var conn = new NpgsqlConnection(connectionString);
 
-            string sql = @"SELECT COUNT(*) FROM contrato WHERE idinmueble = @id_inmueble AND estado = true 
+            string sql = @"SELECT COUNT(*) FROM contrato WHERE idinmueble = @id_inmueble AND estado = @estado 
                            AND (fecha_inicio, fecha_fin) OVERLAPS (@fecha_inicio, @fecha_fin)";
 
             if (contratoId.HasValue)
@@ -207,6 +213,7 @@ namespace inmobiliaria_mvc.Repository
             cmd.Parameters.AddWithValue("@id_inmueble", inmuebleId);
             cmd.Parameters.AddWithValue("@fecha_inicio", fechaInicio);
             cmd.Parameters.AddWithValue("@fecha_fin", fechaFin);
+            cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
 
             if (contratoId.HasValue)
             {
@@ -227,11 +234,12 @@ namespace inmobiliaria_mvc.Repository
                 {
                     string sql =
                         @"SELECT id, idinquilino, fecha_inicio, fecha_fin, monto, estado, fecha_terminacion_anticipada, multa_calculada 
-                                   FROM contrato WHERE idinmueble = @idInmueble AND estado = TRUE;";
+                        FROM contrato WHERE idinmueble = @idInmueble AND estado = @estado";
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@idInmueble", idInmueble);
+                        cmd.Parameters.AddWithValue("@estado", (int)EstadoContrato.Vigente);
                         conn.Open();
                         using (var reader = cmd.ExecuteReader())
                         {
@@ -246,7 +254,7 @@ namespace inmobiliaria_mvc.Repository
                                     Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                     Fecha_fin = reader.GetDateTime("fecha_fin"),
                                     Monto = reader.GetDecimal("monto"),
-                                    Estado = reader.GetBoolean("estado"),
+                                    Estado = (EstadoContrato)reader.GetInt32("estado"),
                                     FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
                                         ? null
                                         : reader.GetDateTime("fecha_terminacion_anticipada"),
@@ -270,85 +278,111 @@ namespace inmobiliaria_mvc.Repository
             }
         }
 
-        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, bool? disponible = null, int? plazo = null)
+        public IList<Contrato> ObtenerFechasDeContratoPorInmueble(int idInmueble)
+        {
+            try
+            {
+                var contratos = new List<Contrato>();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    string sql = @"
+                        SELECT fecha_inicio, fecha_fin
+                        FROM contrato
+                        WHERE idinmueble = @idInmueble;
+                    ";
+
+                    using (var cmd = new NpgsqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idInmueble", idInmueble);
+                        conn.Open();
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var contrato = new Contrato
+                                {
+                                    Fecha_inicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                                    Fecha_fin = reader.GetDateTime(reader.GetOrdinal("fecha_fin"))
+                                };
+
+                                contratos.Add(contrato);
+                            }
+                        }
+                    }
+                }
+
+                return contratos;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error en ObtenerContratosPorInmueble: " + ex.Message);
+                throw;
+            }
+        }
+
+
+        public PagedResult<Contrato> Paginar(int pagina, int tamPagina, ContratoFiltro filtro)
         {
             var res = new List<Contrato>();
             int totalItems = 0;
 
-            using (var conn = new NpgsqlConnection(connectionString))
+            using var conn = new NpgsqlConnection(connectionString);
+            conn.Open();
+
+            var (whereClause, parameters, joinClause) = ConstruirFiltros(filtro);
+
+            string countSql = $@"
+            SELECT COUNT(*) 
+            FROM contrato c
+            INNER JOIN inmueble i ON c.idinmueble = i.id
+            INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {joinClause}
+            {whereClause}";
+
+            using (var countCmd = new NpgsqlCommand(countSql, conn))
             {
-                conn.Open();
+                countCmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value))
+                    .ToArray());
+                totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
+            }
 
-                var whereConditions = new List<string>();
+            string selectSql = $@"
+            SELECT c.id, i.direccion, inq.nombre, inq.apellido,
+                c.fecha_inicio, c.fecha_fin, c.monto, c.estado
+            FROM contrato c
+            INNER JOIN inmueble i ON c.idinmueble = i.id
+            INNER JOIN inquilino inq ON c.idinquilino = inq.idinquilino
+            {joinClause}
+            {whereClause}
+            ORDER BY c.id
+            LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
 
-                if (disponible.HasValue)
-                    whereConditions.Add("c.estado = @disponible");
+            using (var cmd = new NpgsqlCommand(selectSql, conn))
+            {
+                cmd.Parameters.AddRange(parameters.Select(p => new NpgsqlParameter(p.ParameterName, p.Value))
+                    .ToArray());
+                cmd.Parameters.AddWithValue("pagina", pagina);
+                cmd.Parameters.AddWithValue("tamPagina", tamPagina);
 
-                if (plazo.HasValue)
-                    whereConditions.Add(
-                        "c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
-
-                string whereClause = whereConditions.Any()
-                    ? "WHERE " + string.Join(" AND ", whereConditions)
-                    : "";
-
-                // COUNT
-                string countSql = $"SELECT COUNT(*) FROM contrato c {whereClause}";
-                using (var countCmd = new NpgsqlCommand(countSql, conn))
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
                 {
-                    if (disponible.HasValue)
-                        countCmd.Parameters.AddWithValue("disponible", disponible.Value);
-
-                    if (plazo.HasValue)
-                        countCmd.Parameters.AddWithValue("plazo", plazo.Value);
-
-                    totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
-                }
-
-                // SELECT
-                string sql = $@"
-                SELECT c.id, i.direccion, inq.nombre, inq.apellido, c.fecha_inicio, c.fecha_fin, c.monto, c.estado   
-                FROM contrato c
-                INNER JOIN inmueble i ON c.idinmueble = i.id
-                INNER JOIN inquilino inq ON c.idinquilino = inq.idInquilino
-                {whereClause}
-                ORDER BY c.id
-                LIMIT @tamPagina OFFSET (@pagina - 1) * @tamPagina";
-
-                using (var cmd = new NpgsqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("pagina", pagina);
-                    cmd.Parameters.AddWithValue("tamPagina", tamPagina);
-
-                    if (disponible.HasValue)
-                        cmd.Parameters.AddWithValue("disponible", disponible.Value);
-
-                    if (plazo.HasValue)
-                        cmd.Parameters.AddWithValue("plazo", plazo.Value);
-
-                    using (var reader = cmd.ExecuteReader())
+                    res.Add(new Contrato
                     {
-                        while (reader.Read())
+                        Id = reader.GetInt32(0),
+                        Inmueble = new Inmueble { Direccion = reader.GetString(1) },
+                        Inquilino = new Inquilino
                         {
-                            res.Add(new Contrato
-                            {
-                                Id = reader.GetInt32(0),
-                                Inmueble = new Inmueble
-                                {
-                                    Direccion = reader.GetString(1)
-                                },
-                                Inquilino = new Inquilino
-                                {
-                                    Nombre = reader.GetString(2),
-                                    Apellido = reader.GetString(3)
-                                },
-                                Fecha_inicio = reader.GetDateTime(4),
-                                Fecha_fin = reader.GetDateTime(5),
-                                Monto = reader.GetInt32(6),
-                                Estado = reader.GetBoolean(7)
-                            });
-                        }
-                    }
+                            Nombre = reader.GetString(2),
+                            Apellido = reader.GetString(3)
+                        },
+                        Fecha_inicio = reader.GetDateTime(4),
+                        Fecha_fin = reader.GetDateTime(5),
+                        Monto = reader.GetDecimal(6),
+                        Estado = (EstadoContrato)reader.GetInt32(7)
+                    });
                 }
             }
 
@@ -370,7 +404,7 @@ namespace inmobiliaria_mvc.Repository
 
             contrato.MultaCalculada = CalcularMultaImporte(contrato, fechaTerminacion);
             contrato.FechaTerminacionAnticipada = fechaTerminacion;
-            contrato.Fecha_fin = fechaTerminacion;
+            contrato.Estado = EstadoContrato.Rescindido;
             Modificacion(contrato);
 
             var pagos = _repoPago.ObtenerPorContrato(contratoId, incluirAnulados: true).ToList();
@@ -435,6 +469,80 @@ namespace inmobiliaria_mvc.Repository
             return CalcularMultaMeses(contrato, fechaTerminacion) * contrato.Monto;
         }
 
+        private (string whereClause, List<NpgsqlParameter> parameters, string joinClause) ConstruirFiltros(
+            ContratoFiltro filtro)
+        {
+            var whereConditions = new List<string>();
+            var parameters = new List<NpgsqlParameter>();
+            var joinConditions = new List<string>();
+
+            if (filtro.Disponible.HasValue)
+            {
+                if (filtro.Disponible.Value)
+                {
+                    whereConditions.Add("c.estado = @estado_vigente");
+                    parameters.Add(new NpgsqlParameter("estado_vigente", (int)EstadoContrato.Vigente));
+                }
+                else
+                {
+                    whereConditions.Add("c.estado != @estado_vigente");
+                    parameters.Add(new NpgsqlParameter("estado_vigente", (int)EstadoContrato.Vigente));
+                }
+            }
+
+            if (filtro.Plazo.HasValue)
+            {
+                whereConditions.Add(
+                    "c.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + make_interval(days => @plazo)");
+                parameters.Add(new NpgsqlParameter("plazo", filtro.Plazo.Value));
+            }
+
+            if (filtro.Desde.HasValue)
+            {
+                whereConditions.Add("c.fecha_inicio >= @desde");
+                parameters.Add(new NpgsqlParameter("desde", filtro.Desde.Value));
+            }
+
+            if (filtro.Hasta.HasValue)
+            {
+                whereConditions.Add("c.fecha_fin <= @hasta");
+                parameters.Add(new NpgsqlParameter("hasta", filtro.Hasta.Value));
+            }
+
+            if (!string.IsNullOrEmpty(filtro.Inquilino))
+            {
+                whereConditions.Add("(inq.nombre ILIKE @inquilino OR inq.apellido ILIKE @inquilino)");
+                parameters.Add(new NpgsqlParameter("inquilino", $"%{filtro.Inquilino}%"));
+            }
+
+            if (!string.IsNullOrEmpty(filtro.Direccion))
+            {
+                whereConditions.Add("i.direccion ILIKE @direccion");
+                parameters.Add(new NpgsqlParameter("direccion", $"%{filtro.Direccion}%"));
+            }
+
+            if (!string.IsNullOrEmpty(filtro.Termino))
+            {
+                joinConditions.Add("INNER JOIN propietario p ON i.propietarioid = p.id");
+                whereConditions.Add($@"(LOWER(i.direccion) LIKE LOWER(@termino) 
+                                       OR CAST(c.monto AS TEXT) LIKE @termino_monto
+                                       OR LOWER(p.nombre) LIKE LOWER(@termino_prop)
+                                       OR LOWER(p.apellido) LIKE LOWER(@termino_prop))");
+                var likeTerm = $"%{filtro.Termino}%";
+                parameters.Add(new NpgsqlParameter("@termino", likeTerm));
+                parameters.Add(new NpgsqlParameter("@termino_monto", likeTerm));
+                parameters.Add(new NpgsqlParameter("@termino_prop", likeTerm));
+            }
+
+            string whereClause = whereConditions.Any()
+                ? "WHERE " + string.Join(" AND ", whereConditions)
+                : "";
+
+            string joinClause = string.Join(" ", joinConditions);
+
+            return (whereClause, parameters, joinClause);
+        }
+
         public IList<Contrato> ObtenerContratosPorInquilino(int idInquilino)
         {
             try
@@ -468,7 +576,7 @@ namespace inmobiliaria_mvc.Repository
                                     Fecha_inicio = reader.GetDateTime("fecha_inicio"),
                                     Fecha_fin = reader.GetDateTime("fecha_fin"),
                                     Monto = reader.GetDecimal("monto"),
-                                    Estado = reader.GetBoolean("estado"),
+                                    Estado = (EstadoContrato)reader.GetInt32("estado"),
                                     FechaTerminacionAnticipada = reader.IsDBNull("fecha_terminacion_anticipada")
                                         ? null
                                         : reader.GetDateTime("fecha_terminacion_anticipada"),

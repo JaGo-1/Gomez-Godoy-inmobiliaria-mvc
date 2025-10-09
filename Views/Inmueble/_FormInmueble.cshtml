@@ -2,67 +2,84 @@
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-<div class="form-group">
-    <label asp-for="Direccion" class="control-label"></label>
-    <input asp-for="Direccion" class="form-control" />
-    <span asp-validation-for="Direccion" class="text-danger"></span>
+<div class="col-md-8">
+    <div class="form-group">
+        <label asp-for="Direccion" class="control-label small-font"></label>
+        <input asp-for="Direccion" class="form-control bg-transparent" />
+        <span asp-validation-for="Direccion" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Precio" class="control-label"></label>
-    <input asp-for="Precio" class="form-control" />
-    <span asp-validation-for="Precio" class="text-danger"></span>
+<div class="col-md-4">
+    <div class="form-group">
+        <label asp-for="Precio" class="control-label small-font"></label>
+        <input asp-for="Precio" class="form-control bg-transparent" />
+        <span asp-validation-for="Precio" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Ambientes" class="control-label"></label>
-    <input asp-for="Ambientes" class="form-control" />
-    <span asp-validation-for="Ambientes" class="text-danger"></span>
+<div class="col-md-4">
+    <div class="form-group">
+        <label asp-for="Ambientes" class="control-label small-font"></label>
+        <input asp-for="Ambientes" class="form-control bg-transparent" />
+        <span asp-validation-for="Ambientes" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Latitud" class="control-label"></label>
-    <input asp-for="Latitud" class="form-control" />
-    <span asp-validation-for="Latitud" class="text-danger"></span>
+<div class="col-md-4">
+    <div class="form-group">
+        <label asp-for="Latitud" class="control-label small-font"></label>
+        <input asp-for="Latitud" class="form-control bg-transparent" />
+        <span asp-validation-for="Latitud" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Longitud" class="control-label"></label>
-    <input asp-for="Longitud" class="form-control" />
-    <span asp-validation-for="Longitud" class="text-danger"></span>
+<div class="col-md-4">
+    <div class="form-group">
+        <label asp-for="Longitud" class="control-label small-font"></label>
+        <input asp-for="Longitud" class="form-control bg-transparent" />
+        <span asp-validation-for="Longitud" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Uso" class="control-label"></label>
-    <select asp-for="Uso" class="form-control" asp-items="Html.GetEnumSelectList<UsoInmueble>()"></select>
-    <span asp-validation-for="Uso" class="text-danger"></span>
+<div class="col-md-6">
+    <div class="form-group">
+        <label asp-for="Uso" class="control-label small-font"></label>
+        <select asp-for="Uso" class="form-control bg-transparent"
+            asp-items="Html.GetEnumSelectList<UsoInmueble>()"></select>
+        <span asp-validation-for="Uso" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="Tipo" class="control-label"></label>
-    <select asp-for="Tipo" class="form-control" asp-items="Html.GetEnumSelectList<TipoInmueble>()"></select>
-    <span asp-validation-for="Tipo" class="text-danger"></span>
+<div class="col-md-6">
+    <div class="form-group">
+        <label asp-for="Tipo" class="control-label"></label>
+        <select asp-for="Tipo" class="form-control bg-transparent"
+            asp-items="Html.GetEnumSelectList<TipoInmueble>()"></select>
+        <span asp-validation-for="Tipo" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label asp-for="PropietarioId" class="control-label"></label>
-    <select asp-for="PropietarioId" class="form-control" asp-items="ViewBag.Propietarios">
-        <option value="">-- Seleccione un propietario --</option>
-    </select>
-    <span asp-validation-for="PropietarioId" class="text-danger"></span>
+<div class="col-md-6">
+    <div class="form-group">
+        <label asp-for="PropietarioId" class="control-label"></label>
+        <select asp-for="PropietarioId" class="form-control bg-transparent" asp-items="ViewBag.Propietarios">
+            <option value="">-- Seleccione un propietario --</option>
+        </select>
+        <span asp-validation-for="PropietarioId" class="text-danger"></span>
+    </div>
 </div>
 
-<div class="form-group">
-    <label class="control-label">Estado</label>
-    <div>
+<div class="col-md-6 d-flex align-items-center">
+    <div class="form-check mt-3">
         <input asp-for="Estado" type="checkbox" class="form-check-input" id="Estado" />
         <label for="Estado" class="form-check-label">Activo</label>
+        <span asp-validation-for="Estado" class="text-danger"></span>
     </div>
-    <span asp-validation-for="Estado" class="text-danger"></span>
 </div>
 
-
-
-<div class="form-group mt-3">
-    <input type="submit" value="Guardar" class="btn btn-primary" />
+<div class="col-12 mt-5">
+    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+        <i class="fa-regular fa-floppy-disk"></i> Guardar
+    </button>
 </div>

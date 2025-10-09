@@ -4,19 +4,22 @@
     ViewData["Title"] = "Crear Propietario";
 }
 
-<h1>@ViewData["Title"]</h1>
-
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <partial name="_FormPropietario" model="Model" />
-        </form>
-    </div>
+<div class="mb-5">
+    <a asp-action="Index" class="btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver</a>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-secondary mt-3">Volver a Lista</a>
+<h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+
+
+<div class="">
+    <form asp-action="Create">
+        <div class="row g-3">
+            <partial name="_FormPropietario" model="Model" />
+
+        </div>
+    </form>
 </div>
 
 @section Scripts {

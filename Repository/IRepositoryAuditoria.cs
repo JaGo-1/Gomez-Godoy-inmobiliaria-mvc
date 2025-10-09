@@ -5,6 +5,6 @@ namespace inmobiliaria_mvc.Repository
 {
     public interface IRepositoryAuditoria : IRepository<Auditoria>
     {
-        PagedResult<Auditoria> Paginar(int pagina, int tamPagina);
+        PagedResult<Auditoria> Paginar(int pagina, int tamPagina, string tipo);
     }
 }

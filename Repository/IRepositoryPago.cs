@@ -1,4 +1,5 @@
 ﻿using inmobiliaria_mvc.Models;
+using inmobiliaria_mvc.ViewModels;
 
 namespace inmobiliaria_mvc.Repository;
 
@@ -9,4 +10,6 @@ public interface IRepositoryPago : IRepository<Pago>
     int Modificacion(Pago pago, bool esRegistroReal = false);
     IList<Pago> ObtenerPorContrato(int contratoId, bool incluirAnulados = false);
     int AnularPago(int idPago);
+
+    PagedResult<PagoVM> Paginar(int page, int pageSize);
 }

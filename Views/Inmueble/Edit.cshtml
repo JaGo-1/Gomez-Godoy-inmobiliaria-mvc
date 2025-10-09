@@ -4,19 +4,21 @@
     ViewData["Title"] = "Editar Inmueble";
 }
 
-<h1>@ViewData["Title"]</h1>
-
-<hr />
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Edit" method="post">
-            <partial name="_FormInmueble" model="Model" />
-        </form>
-    </div>
+<div class="mb-5">
+    <a asp-action="Index" class="btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver</a>
 </div>
 
+
+<h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+
 <div>
-    <a asp-action="Index" class="btn btn-secondary mt-3">Volver a Lista</a>
+    <form asp-action="Edit" method="post" class="">
+        <div class="row g-3">
+            <partial name="_FormInmueble" model="Model" />
+        </div>
+    </form>
 </div>
 
 @section Scripts {

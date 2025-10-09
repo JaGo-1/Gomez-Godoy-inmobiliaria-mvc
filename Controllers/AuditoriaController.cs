@@ -19,26 +19,28 @@ namespace inmobiliaria_mvc.Controllers
         }
 
         [Authorize(Policy = "Administrador")]
-        public ActionResult Filtrar(int page = 1, int pageSize = 10)
+        public ActionResult Filtrar(int page = 1, int pageSize = 10, string tipo = "")
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, tipo);
             return PartialView("_Tabla", tabla);
         }
 
         [Authorize(Policy = "Administrador")]
-        public ActionResult Index(int page = 1, int pageSize = 10)
+        public ActionResult Index(int page = 1, int pageSize = 10, string tipo = "")
         {
-            var tabla = ConstruirTabla(page, pageSize);
+            var tabla = ConstruirTabla(page, pageSize, tipo);
             if (TempData.ContainsKey("Id")) ViewBag.Id = TempData["Id"];
             if (TempData.ContainsKey("Mensaje")) ViewBag.Mensaje = TempData["Mensaje"];
+
+            ViewBag.Tipo = tipo;
 
             return View(tabla);
         }
 
         [Authorize(Policy = "Administrador")]
-        private TablaViewModel<Auditoria> ConstruirTabla(int page, int pageSize)
+        private TablaViewModel<Auditoria> ConstruirTabla(int page, int pageSize, string tipo)
         {
-            var auditoria = _repo.Paginar(page, pageSize);
+            var auditoria = _repo.Paginar(page, pageSize, tipo);
 
             var tabla = TablaHelper.MapToTablaViewModel(auditoria, a =>
             {

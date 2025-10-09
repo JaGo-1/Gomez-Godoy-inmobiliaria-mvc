@@ -8,25 +8,28 @@
 body {
   display: flex;
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #1a1a1a;
 }
 
 .sidebar {
-  width: 220px;
-  background-color: #fff;
-  border-right: 1px solid #e0e0e0;
+  max-width: 300px;
+  background-color: #1a1a1a;
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 20px;
   transition: width 0.3s;
 }
 
-.sidebar .logo {
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #27ae60;
-  margin-bottom: 40px;
+.logo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 4.5rem;
+}
+
+.logo img {
+  max-width: 200px;
 }
 
 .sidebar nav a {
@@ -34,13 +37,14 @@ body {
   align-items: center;
   padding: 12px 20px;
   text-decoration: none;
-  color: #333;
+  color: #dadada;
   font-size: 0.95rem;
   transition: background 0.2s;
 }
 
 .sidebar nav a:hover {
-  background-color: #f1f1f1;
+  background-color: #bdbdbd17;
+  border-radius: 10px;
 }
 
 .sidebar nav a i {
@@ -51,16 +55,18 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: #eeeeee;
+  margin: 30px;
+  border-radius: 20px;
 }
 
 .main {
-  padding: 3rem 8rem;
+  padding: 3rem;
+  height: 100%;
 }
 
 .topnav {
   height: 60px;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -88,6 +94,22 @@ body {
 .topnav .user-info .role {
   font-size: 0.8rem;
   color: #888;
+}
+
+.flatpickr-input[readonly] {
+  cursor: pointer;
+}
+
+.small-font {
+  font-size: 0.85rem;
+}
+.small-placeholder::placeholder {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.btn {
+  font-size: 0.85rem;
 }
 
 @media (max-width: 768px) {

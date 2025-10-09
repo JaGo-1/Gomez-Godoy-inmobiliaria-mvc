@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using inmobiliaria_mvc.Helpers;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -38,6 +40,7 @@ builder.Services.AddScoped<IRepositoryAuditoria, RepositoryAuditoria>();
 
 
 var app = builder.Build();
+BotonHelper.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
 if (!app.Environment.IsDevelopment())
 {

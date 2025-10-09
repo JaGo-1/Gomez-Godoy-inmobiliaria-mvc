@@ -2,6 +2,7 @@
 using inmobiliaria_mvc.Models;
 using inmobiliaria_mvc.Repository;
 using inmobiliaria_mvc.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -77,11 +78,20 @@ public class InmuebleController : Controller
         }
     }
 
-    public ActionResult Details(int id)
+    public ActionResult Details(int id, [FromServices] IRepositoryImagen repoImagen)
     {
         try
         {
             var inmueble = repositorio.ObtenerPorId(id);
+            if (inmueble == null)
+            {
+                TempData["Error"] = "Inmueble no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var imagenes = repoImagen.BuscarPorInmueble(id);
+            inmueble.Imagenes = imagenes;
+
             var contratos = repoContrato.ObtenerContratosPorInmueble(id);
 
             var model = new InmuebleDetalleVM
@@ -99,6 +109,8 @@ public class InmuebleController : Controller
         }
     }
 
+    [Authorize(Roles = "Administrador")]
+
     public ActionResult Edit(int id)
     {
         var inmueble = repositorio.ObtenerPorId(id);
@@ -115,6 +127,8 @@ public class InmuebleController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
+
     public ActionResult Edit(int id, Inmueble inmueble)
     {
         try
@@ -140,24 +154,10 @@ public class InmuebleController : Controller
         }
     }
 
-    public ActionResult Delete(int id)
-    {
-        try
-        {
-            repositorio.Baja(id);
-            TempData["Mensaje"] = "Eliminación realizada correctamente.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch
-        {
-            TempData["Error"] = "Hubo un error al eliminar el Inmueble.";
-            return RedirectToAction(nameof(Index));
-        }
-    }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult Delete(int id, IFormCollection collection)
+    [Authorize(Roles = "Administrador")]
+    public ActionResult Delete(int id)
     {
         try
         {
@@ -199,11 +199,11 @@ public class InmuebleController : Controller
             { "Propietario", l.Propietario?.NombreCompleto },
             {
                 "Acciones", $@"
-            <a href='/Inmueble/Details/{l.Id}' class='btn btn-info btn-sm'>Detalles</a>
-            <a href='/Inmueble/Edit/{l.Id}' class='btn btn-warning btn-sm'>Editar</a>
-            <a href='/Inmueble/Delete/{l.Id}' class='btn btn-danger btn-sm'>Eliminar</a>
-            <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
-        "
+                {BotonHelper.BotonDetalles("Inmueble", l.Id)}
+                {BotonHelper.BotonEditar("Inmueble", l.Id)}
+                {BotonHelper.BotonEliminar("Inmueble", l.Id, $"Inmueble {l.Direccion}")}
+                <a href='/Inmueble/Imagenes/{l.Id}' class='btn btn-primary btn-sm'>Imagen</a>
+            "
             }
         });
 

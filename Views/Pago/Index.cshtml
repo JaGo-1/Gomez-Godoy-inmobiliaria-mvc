@@ -1,10 +1,12 @@
-﻿@model IEnumerable<inmobiliaria_mvc.Models.Pago>
+﻿@using inmobiliaria_mvc.ViewModels
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@model TablaViewModel<PagoVM>
+
 
 @{
     ViewData["Title"] = "Lista de Pagos";
 }
-
-<h1>@ViewData["Title"]</h1>
 
 @if (ViewBag.Mensaje != null)
 {
@@ -15,52 +17,40 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Registrar Nuevo Pago</a>
-</p>
+@{
+    var admin = (await AuthorizationService.AuthorizeAsync(User, "Administrador")).Succeeded;
+}
 
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@Html.DisplayNameFor(model => model.IdPago)</th>
-                <th>@Html.DisplayNameFor(model => model.ContratoId)</th>
-                <th>Inmueble</th>
-                <th>@Html.DisplayNameFor(model => model.NumeroPago)</th>
-                <th>@Html.DisplayNameFor(model => model.FechaEsperada)</th>
-                <th>@Html.DisplayNameFor(model => model.FechaPago)</th>
-                <th>@Html.DisplayNameFor(model => model.Importe)</th>
-                <th>@Html.DisplayNameFor(model => model.Detalle)</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.OrderBy(p => p.ContratoId).ThenBy(p => p.NumeroPago))
-            {
-                <tr>
-                    <td>@item.IdPago</td>
-                    <td>@item.ContratoId</td>
-                    <td>@item.Contrato?.Inmueble?.Direccion</td>
-                    <td>@item.NumeroPago</td>
-                    <td>@item.FechaEsperada.ToShortDateString()</td>
-                    <td>@(item.FechaPago.HasValue ? item.FechaPago.Value.ToShortDateString() : "Pendiente")</td>
-                    <td>@item.Importe.ToString("C")</td>
-                    <td>@item.Detalle</td>
-                    <td>
-                        @if (item.Estado && !item.FechaPago.HasValue)
-                        {
-                            <form asp-action="Registrar" method="post" style="display:inline;">
-                                <input type="hidden" name="contratoId" value="@item.ContratoId" />
-                                <input type="hidden" name="numeroPago" value="@item.NumeroPago" />
-                                <button type="submit" class="btn btn-primary btn-sm">Registrar Pago</button>
-                            </form>
-                        }
-                        <a asp-action="Details" asp-route-id="@item.IdPago" class="btn btn-info btn-sm">Detalles</a>
-                        <a asp-action="Edit" asp-route-id="@item.IdPago" class="btn btn-warning btn-sm">Editar</a>
-                        <a asp-action="Delete" asp-route-id="@item.IdPago" class="btn btn-danger btn-sm">Eliminar</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+    @if (admin)
+    {
+        <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="pago"
+            class="btn btn-dark d-flex align-items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Historial
+            de
+            cambios
+        </a>
+    }
 </div>
+
+
+
+<div id="tabla-pagos">
+    <partial name="_Tabla" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/tabla.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tablaPagos = initTabla({
+                endpoint: "/Pago/Filtrar",
+                containerId: "tabla-pagos"
+            });
+
+            tablaPagos.init(1);
+        });
+    </script>
+}

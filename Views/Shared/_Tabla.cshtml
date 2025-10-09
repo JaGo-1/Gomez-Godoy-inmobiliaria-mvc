@@ -1,6 +1,6 @@
 @model dynamic
 
-<table class="table">
+<table class="table table-minimal">
     <thead>
         <tr>
             @foreach (var col in Model.Columnas)
@@ -27,22 +27,25 @@
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
-                <a href="#" class="page-link" data-page="@(Model.PageNumber - 1)">
+                <a href="#" class="page-link bg-transparent border-0 text-success small-font"
+                    data-page="@(Model.PageNumber - 1)">
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
             </li>
 
             <li class="page-item disabled">
-                <span class="page-link">
+                <span class="page-link bg-transparent border-0 text-muted small-font">
                     Página @Model.PageNumber de @Model.TotalPages
                 </span>
             </li>
 
             <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
-                <a href="#" class="page-link" data-page="@(Model.PageNumber + 1)">
+                <a href="#" class="page-link bg-transparent border-0 text-success small-font"
+                    data-page="@(Model.PageNumber + 1)">
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
             </li>
         </ul>
     </nav>
+
 }
