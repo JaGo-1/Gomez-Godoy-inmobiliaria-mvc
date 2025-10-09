@@ -201,7 +201,7 @@ namespace inmobiliaria_mvc.Controllers
                 {
                     "Acciones", $@"
                     {BotonHelper.BotonDetalles("Inquilino", l.IdInquilino)}
-                    {BotonHelper.BotonEditar("Contrato", l.IdInquilino)}
+                    {BotonHelper.BotonEditar("Inquilino", l.IdInquilino)}
                     {BotonHelper.BotonEliminar("Inquilino", l.IdInquilino, $"Inquilino {l.Nombre} {l.Apellido}")}
                 "
                 }

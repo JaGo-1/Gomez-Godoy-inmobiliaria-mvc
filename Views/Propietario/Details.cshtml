@@ -4,13 +4,19 @@
     ViewData["Title"] = "Detalle del Propietario";
 }
 
+<div class="mb-3">
+    <a asp-action="Index" class="btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver</a>
+</div>
+
 <div class="container-fluid">
     <div class="row">
 
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Detalles del Propietario</h5>
+                <div class="card-header bg-dark text-white">
+                    <p class="mb-0">Detalles del Propietario</p>
                 </div>
                 <div class="card-body">
                     <p><strong>Nombre:</strong> @Model.Propietario?.Nombre</p>
@@ -24,8 +30,8 @@
 
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Inmuebles Asociados</h5>
+                <div class="card-header bg-dark text-white">
+                    <p class="mb-0">Inmuebles Asociados</p>
                 </div>
                 <div class="card-body">
                     @if (Model.Inmuebles != null && Model.Inmuebles.Any())
@@ -65,11 +71,5 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="mt-3">
-        <a asp-action="Index" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
     </div>
 </div>

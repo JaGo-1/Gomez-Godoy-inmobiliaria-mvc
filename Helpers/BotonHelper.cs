@@ -23,32 +23,34 @@ namespace inmobiliaria_mvc.Helpers
 
             return EsAdministrador()
                 ? $@"
-                    <a class='btn btn-danger btn-sm' 
-                       data-bs-toggle='modal' 
-                       data-bs-target='#confirmDeleteModal' 
-                       data-url='/{controller}/Delete/' 
-                       data-id='{id}' 
-                       data-descripcion='{safeDescripcion}'>
-                       Eliminar
-                    </a>"
+                <a class='icon-btn' 
+                data-bs-toggle='modal' 
+                data-bs-target='#confirmDeleteModal' 
+                data-url='/{controller}/Delete/' 
+                data-id='{id}' 
+                data-descripcion='{safeDescripcion}' 
+                title='Eliminar'>
+                <i class='fa-regular fa-trash-can'></i>
+                </a>"
                 : "";
         }
 
         public static string BotonEditar(string controller, int id)
         {
             return EsAdministrador()
-                ? $"<a href='/{controller}/Edit/{id}' class='btn btn-warning btn-sm'>Editar</a>"
+                ? $"<a href='/{controller}/Edit/{id}' class='icon-btn' title='Editar'><i class='fa-regular fa-pen-to-square'></i></a>"
                 : "";
         }
 
         public static string BotonDetalles(string controller, int id)
         {
-            return $"<a href='/{controller}/Details/{id}' class='btn btn-info btn-sm'>Detalles</a>";
+            return $"<a href='/{controller}/Details/{id}' class='icon-btn' title='Detalles'><i class='fa-regular fa-eye'></i></a>";
         }
 
         public static string BotonRenovar(string controller, int id)
         {
-            return $"<a href='/{controller}/Renovar/{id}' class='btn btn-success btn-sm'>Renovar</a>";
+            return $"<a href='/{controller}/Renovar/{id}' class='icon-btn' title='Renovar'><i class='fa-solid fa-arrows-rotate'></i></a>";
         }
+
     }
 }

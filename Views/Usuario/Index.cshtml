@@ -5,8 +5,6 @@
     var rnd = new Random();
 }
 
-<h1>@ViewData["Title"]</h1>
-
 @if (TempData["Mensaje"] != null)
 {
     <div class="alert alert-success">@TempData["Mensaje"]</div>
@@ -16,9 +14,15 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Usuario</a>
-</p>
+
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+    <a asp-action="Create"
+        class="btn border border-success text-success rounded bg-transparent d-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i>
+        Nuevo Usuario
+    </a>
+</div>
 
 <table class="table table-striped align-middle">
     <thead>
@@ -44,7 +48,8 @@
                     @if (!string.IsNullOrEmpty(item.Avatar))
                     {
                         var x = item.Avatar + "?" + rnd.Next();
-                        <img width="32" src="@x" class="rounded-circle" />
+                        <img src="@x" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" />
+
                     }
                     else
                     {
@@ -56,10 +61,8 @@
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm me-2">
                         <i class="bi bi-pencil-square"></i> Editar
                     </a>
-                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#confirmDeleteModal"
-                            data-userid="@item.Id"
-                            data-username="@item.Nombre @item.Apellido">
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                        data-userid="@item.Id" data-username="@item.Nombre @item.Apellido">
                         <i class="bi bi-trash"></i> Eliminar
                     </button>
                 </td>
@@ -73,7 +76,8 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="confirmDeleteLabel">Confirmar eliminación</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
                 <p>¿Estás seguro de que deseas eliminar al usuario <strong id="userNameToDelete"></strong>?</p>

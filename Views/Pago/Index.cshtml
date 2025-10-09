@@ -8,8 +8,6 @@
     ViewData["Title"] = "Lista de Pagos";
 }
 
-<h1>@ViewData["Title"]</h1>
-
 @if (ViewBag.Mensaje != null)
 {
     <div class="alert alert-success">@ViewBag.Mensaje</div>
@@ -23,14 +21,20 @@
     var admin = (await AuthorizationService.AuthorizeAsync(User, "Administrador")).Succeeded;
 }
 
-@if (admin)
-{
-    <p>
-        <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="pago" class="btn btn-success">
-            Ver historial de cambios
+<div class="d-flex align-items-en justify-content-between flex-wrap gap-3 mb-3">
+    <h1 class="h4 fw-bold">@ViewData["Title"]</h1>
+    @if (admin)
+    {
+        <a asp-controller="Auditoria" asp-action="Index" asp-route-tipo="pago"
+            class="btn btn-dark d-flex align-items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Historial
+            de
+            cambios
         </a>
-    </p>
-}
+    }
+</div>
+
 
 
 <div id="tabla-pagos">

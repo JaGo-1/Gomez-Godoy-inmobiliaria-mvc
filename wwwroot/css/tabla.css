@@ -1,0 +1,61 @@
+.table-minimal {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.table-minimal {
+  background-color: #f8f9fa;
+  border-radius: 20px;
+  padding: 1rem;
+}
+
+.table-minimal thead th {
+  font-weight: 600;
+  border-bottom: none;
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+.table-minimal tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table-minimal tbody tr:hover {
+  background-color: #f1f3f5;
+  transition: background-color 0.2s ease;
+}
+
+.table-minimal thead th:first-child {
+  border-top-left-radius: 0.5rem;
+}
+.table-minimal thead th:last-child {
+  border-top-right-radius: 0.5rem;
+}
+.table-minimal tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 0.5rem;
+}
+.table-minimal tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 0.5rem;
+}
+
+.icon-btn {
+  color: #616161a2;
+  font-size: 1.1rem;
+  text-decoration: none;
+  margin: 0 0.3rem;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: #0a4caf;
+}
+
+.icon-btn i {
+  pointer-events: none;
+}
