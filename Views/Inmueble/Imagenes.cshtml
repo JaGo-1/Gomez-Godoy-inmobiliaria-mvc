@@ -77,9 +77,9 @@
 			<!-- Formulario para subir nuevas imágenes -->
 			<form id="formInterior" enctype="multipart/form-data" onsubmit="subirImagenes(event)">
 				<input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required
-					class="form-control mb-2 small-font bg-transparent" onchange="previsualizarInteriores(event)"">
+					class="form-control mb-2 small-font bg-transparent" onchange="previsualizarInteriores(event)">
 				<button type=" submit" class="btn btn-sm btn-primary d-flex gap-3 align-items-center"><i
-					class="fas fa-upload"></i>Subir imagen</button>
+						class="fas fa-upload"></i>Subir imagen</button>
 			</form>
 
 			<!-- Previsualización -->
@@ -181,12 +181,12 @@
 				let html = ``;
 				imagenes.forEach(img => {
 					html += `																			<div class="m-2 position-relative imagen-con-hover">
-								<img src="${img.url}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
-								<button type="button" class="btn btn-danger btn-sm btn-eliminar-imagen" onclick="eliminarImagen(${img.id})">
-									<i class="fas fa-times"></i>
-								</button>
-						</div>
-						`;
+									<img src="${img.url}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+									<button type="button" class="btn btn-danger btn-sm btn-eliminar-imagen" onclick="eliminarImagen(${img.id})">
+										<i class="fas fa-times"></i>
+									</button>
+							</div>
+							`;
 				});
 				$('#galeriaActual').html(html);
 			} else {
