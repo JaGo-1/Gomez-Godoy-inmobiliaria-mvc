@@ -2,24 +2,11 @@
 
 ## Descripción
 
-Sistema de **gestión de alquileres** desarrollado en **ASP.NET** con **PostgreSQL** como motor de base de datos.  
-Actualmente permite realizar el **ABM (Alta, Baja, Modificación) de propietarios e inquilinos**.
+Sistema de **gestión de alquileres** desarrollado en **ASP.NET** con **PostgreSQL** como base de datos.  
+Permite administrar **propietarios, inquilinos, inmuebles, contratos y pagos**, además de gestionar **usuarios, imágenes** y un **registro de auditoría** para el seguimiento de cambios.  
+Incluye funcionalidades de **ABM completo**, control de **contratos activos**, **pagos y multas**, y **seguimiento histórico** de modificaciones.
 
-![DER Propietarios e Inquilinos](Diagrams/DER_PropietariosInquilinos.png)
-
-## Entidades
-
-### Propietario
-
-- Representa a los dueños de uno o varios inmuebles.
-- Funciones: ABM completo (crear, modificar, eliminar y listar propietarios).
-- Columnas principales: `id`, `dni`, `nombre`, `apellido`, `telefono`, `email`, `clave`, `estado`.
-
-### Inquilino
-
-- Representa a las personas que contratan inmuebles.
-- Funciones: ABM completo (crear, modificar, eliminar y listar inquilinos).
-- Columnas principales: `idInquilino`, `dni`, `nombre`, `apellido`, `telefono`, `email`, `estado`.
+![DER Propietarios e Inquilinos](Diagrams/DER_Inmobiliaria.png)
 
 ## Herramientas
 
@@ -45,7 +32,7 @@ CREATE DATABASE inmobiliariabd;
 ### 3. Crear la estructura de tablas
 
 - Abrir Database/schema.sql.
-- Ejecutar el script para crear las tablas propietario e inquilino vacías.
+- Ejecutar el script para crear las tablas vacías.
 
 ### 4. Cargar datos de prueba (opcional)
 
